@@ -40,12 +40,7 @@ AgroTech is an all-in-one farm management dashboard designed to help farmers, ag
 - Attendance logs and wage summaries
 - Calendar view for labor distribution
 
-### 8. 🛰 Remote Sensing & Imagery
-- Satellite and drone image integration
-- NDVI and stress maps for issue detection
-- Timeline comparison for crop zones
-
-### 9. 📈 Reports & Analytics
+### 8. 📈 Reports & Analytics
 - Generate reports by date, field, or crop
 - Download/export charts in PDF/CSV format
 - Visual insights for seasonal planning
