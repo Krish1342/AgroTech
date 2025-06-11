@@ -14,6 +14,14 @@ export default function Weather() {
         <p>
             🧪 Soil pH: 6.5 (Slightly acidic, suitable for most crops)
         </p>
+        <p>
+            🌾 Nutrient Levels: Nitrogen: 30 ppm, Phosphorus: 20 ppm, Potassium: 25 ppm</p>
+        <p>
+            🌍 Soil Type: Loamy (Best for water retention and nutrient availability)
+        </p>
+        <p>
+            🌧️ Recent Rainfall: 0.5 inches in the last 24 hours
+        </p>
         <div className="mt-2">
           <p className="text-sm text-gray-500">
             Historical Trends:
