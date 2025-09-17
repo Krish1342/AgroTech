@@ -1,0 +1,79 @@
+# Python__pycache__/
+
+__pycache__/
+
+*.py[cod]# Environment variables
+
+*$py.class.env
+
+*.so.env.local
+
+.Python.env.development.local
+
+build/.env.test.local
+
+develop-eggs/.env.production.local
+
+dist/
+
+downloads/# API Keys and sensitive data
+
+eggs/*.key
+
+.eggs/secrets/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# API Keys and sensitive data
+*.key
+secrets/
+config/secrets.json
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+temp/
