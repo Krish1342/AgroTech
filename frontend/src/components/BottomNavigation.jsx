@@ -4,7 +4,13 @@ import {
   BottomNavigationAction,
   Paper,
 } from "@mui/material";
-import { Dashboard, Eco, Chat, Settings, CameraAlt } from "@mui/icons-material";
+import {
+  Dashboard,
+  Agriculture,
+  Chat,
+  Settings,
+  CameraAlt,
+} from "@mui/icons-material";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 
@@ -87,7 +93,7 @@ const BottomNavigation = () => {
         />
         <BottomNavigationAction
           label={getTranslation("fields")}
-          icon={<Eco />}
+          icon={<Agriculture />}
           sx={{
             minWidth: 0,
             padding: "6px 12px 8px",

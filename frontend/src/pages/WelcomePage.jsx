@@ -1,12 +1,28 @@
-import React from "react";
-import { Box, Typography, Button, Container } from "@mui/material";
-import { Agriculture, ArrowForward } from "@mui/icons-material";
+import React, { useState } from "react";
+import {
+  Box,
+  Typography,
+  Button,
+  Container,
+  Card,
+  CardContent,
+  Chip,
+} from "@mui/material";
+import {
+  Agriculture,
+  ArrowForward,
+  Language,
+  Check,
+} from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 
 const WelcomePage = () => {
   const navigate = useNavigate();
-  const { state, getTranslation } = useAppContext();
+  const { state, actions, getTranslation } = useAppContext();
+  const [selectedLanguage, setSelectedLanguage] = useState(
+    state.language || "en"
+  );
 
   // Redirect to dashboard if already logged in
   React.useEffect(() => {
@@ -14,6 +30,16 @@ const WelcomePage = () => {
       navigate("/dashboard");
     }
   }, [state.isAuthenticated, navigate]);
+
+  const languages = [
+    { code: "en", name: "English", native: "English" },
+    { code: "hi", name: "Hindi", native: "हिंदी" },
+  ];
+
+  const handleLanguageSelect = (langCode) => {
+    setSelectedLanguage(langCode);
+    actions.setLanguage(langCode);
+  };
 
   const handleGetStarted = () => {
     navigate("/login");
@@ -23,7 +49,7 @@ const WelcomePage = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg, #4caf50 0%, #45a049 100%)",
+        background: "linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)",
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
@@ -34,102 +60,120 @@ const WelcomePage = () => {
       }}
     >
       <Container maxWidth="sm">
-        {/* Logo/Icon */}
+        {/* Header */}
         <Box sx={{ mb: 4 }}>
-          <Agriculture sx={{ fontSize: 80, mb: 2 }} />
+          <Agriculture sx={{ fontSize: 60, mb: 2, color: "white" }} />
           <Typography
-            variant="h3"
+            variant="h4"
             component="h1"
             sx={{
               fontWeight: 700,
               mb: 1,
-              fontSize: { xs: "2rem", sm: "2.5rem" },
-            }}
-          >
-            AgroTech
-          </Typography>
-          <Typography
-            variant="h6"
-            sx={{
-              opacity: 0.9,
-              fontWeight: 400,
-              fontSize: { xs: "1rem", sm: "1.25rem" },
-            }}
-          >
-            Smart Farming Solutions
-          </Typography>
-        </Box>
-
-        {/* Welcome Message */}
-        <Box sx={{ mb: 6 }}>
-          <Typography
-            variant="h5"
-            sx={{
-              mb: 3,
-              fontWeight: 600,
-              fontSize: { xs: "1.25rem", sm: "1.5rem" },
+              color: "white",
             }}
           >
             {getTranslation("welcome")}
           </Typography>
           <Typography
-            variant="body1"
-            sx={{
-              opacity: 0.9,
-              lineHeight: 1.6,
-              fontSize: { xs: "0.9rem", sm: "1rem" },
-              mb: 2,
-            }}
-          >
-            Monitor your fields, detect diseases, get AI-powered
-            recommendations, and optimize your farming operations with our smart
-            agriculture platform.
-          </Typography>
-          <Typography
             variant="body2"
             sx={{
-              opacity: 0.8,
-              fontSize: { xs: "0.8rem", sm: "0.9rem" },
+              opacity: 0.9,
+              mb: 4,
             }}
           >
-            Join thousands of farmers already using AgroTech to increase their
-            yield and reduce costs.
+            {state.language === "hi" ? "स्वागत" : "Welcome"}
           </Typography>
         </Box>
 
-        {/* Features List */}
-        <Box sx={{ mb: 6 }}>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 2,
-              textAlign: "left",
-            }}
-          >
-            {[
-              "🌾 Real-time field monitoring",
-              "🔍 AI-powered disease detection",
-              "💧 Smart irrigation management",
-              "📊 Data-driven insights",
-              "🌤️ Weather integration",
-              "📱 Mobile-first design",
-            ].map((feature, index) => (
-              <Typography
-                key={index}
-                variant="body2"
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  opacity: 0.9,
-                  fontSize: { xs: "0.85rem", sm: "0.95rem" },
-                }}
+        {/* Language Selection Card */}
+        <Card
+          sx={{
+            mb: 4,
+            backgroundColor: "rgba(255,255,255,0.95)",
+            backdropFilter: "blur(10px)",
+            borderRadius: 3,
+            boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
+          }}
+        >
+          <CardContent sx={{ p: 3 }}>
+            <Typography
+              variant="h6"
+              sx={{ mb: 3, color: "#2e7d32", fontWeight: 600 }}
+            >
+              {getTranslation("selectLanguage")}
+            </Typography>
+
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {languages.map((lang) => (
+                <Button
+                  key={lang.code}
+                  variant={
+                    selectedLanguage === lang.code ? "contained" : "outlined"
+                  }
+                  onClick={() => handleLanguageSelect(lang.code)}
+                  sx={{
+                    py: 2,
+                    px: 3,
+                    borderRadius: 2,
+                    textTransform: "none",
+                    fontSize: "1rem",
+                    fontWeight: 500,
+                    border: "2px solid #4caf50",
+                    backgroundColor:
+                      selectedLanguage === lang.code
+                        ? "#4caf50"
+                        : "transparent",
+                    color: selectedLanguage === lang.code ? "white" : "#4caf50",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    "&:hover": {
+                      backgroundColor:
+                        selectedLanguage === lang.code
+                          ? "#45a049"
+                          : "rgba(76, 175, 80, 0.1)",
+                      borderColor: "#45a049",
+                    },
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <Language sx={{ fontSize: 20 }} />
+                    <Box sx={{ textAlign: "left" }}>
+                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                        {lang.name}
+                      </Typography>
+                      <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                        {lang.native}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  {selectedLanguage === lang.code && (
+                    <Check sx={{ fontSize: 20 }} />
+                  )}
+                </Button>
+              ))}
+            </Box>
+
+            {/* Voice Onboarding Option */}
+            <Box
+              sx={{ mt: 3, p: 2, backgroundColor: "#f5f5f5", borderRadius: 2 }}
+            >
+              <Box
+                sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}
               >
-                {feature}
+                <input type="checkbox" id="voiceOnboarding" />
+                <label htmlFor="voiceOnboarding">
+                  <Typography variant="body2" sx={{ color: "#2e7d32" }}>
+                    Voice Onboarding
+                  </Typography>
+                </label>
+              </Box>
+              <Typography variant="caption" sx={{ color: "#666" }}>
+                {getTranslation("enableVoiceGuidance")}
               </Typography>
-            ))}
-          </Box>
-        </Box>
+            </Box>
+          </CardContent>
+        </Card>
 
         {/* Get Started Button */}
         <Button
@@ -139,12 +183,12 @@ const WelcomePage = () => {
           endIcon={<ArrowForward />}
           sx={{
             bgcolor: "white",
-            color: "#4caf50",
+            color: "#2e7d32",
             fontWeight: 600,
             py: 1.5,
             px: 4,
             borderRadius: 3,
-            fontSize: { xs: "1rem", sm: "1.1rem" },
+            fontSize: "1.1rem",
             textTransform: "none",
             boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
             "&:hover": {
@@ -155,20 +199,8 @@ const WelcomePage = () => {
             transition: "all 0.3s ease",
           }}
         >
-          Get Started
+          {getTranslation("continue")}
         </Button>
-
-        {/* Footer */}
-        <Typography
-          variant="caption"
-          sx={{
-            mt: 4,
-            opacity: 0.7,
-            fontSize: { xs: "0.7rem", sm: "0.75rem" },
-          }}
-        >
-          Made with ❤️ for farmers
-        </Typography>
       </Container>
     </Box>
   );

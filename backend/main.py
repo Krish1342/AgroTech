@@ -1,43 +1,63 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from datetime import datetime
+import os
+from dotenv import load_dotenv
+from pydantic import BaseModel
+from typing import Dict, Any, Optional
 
-# Import routers
-from api.routes import crops, soil, weather, predictions, users, data
-from services.ml_models import get_ml_service
-from services.weather_service import get_weather_service
+# Load environment variables from .env file
+load_dotenv()
+
+# Import services
+from services.chatbot import get_chatbot, health_check as chatbot_health_check
+from services.weather import get_weather_service
+
+# Models for requests
+class ChatRequest(BaseModel):
+    message: str
+    context: Optional[Dict[str, Any]] = None
+    session_id: Optional[str] = None
+
+class WeatherRequest(BaseModel):
+    lat: float
+    lng: float
+
+class WeatherCityRequest(BaseModel):
+    city: str
 
 # Global service instances
-ml_service = None
+chatbot_service = None
 weather_service = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    global ml_service, weather_service
+    global chatbot_service, weather_service
     print("Starting up Agrotech API...")
     
-    # Initialize ML models and services
-    ml_service = get_ml_service()
-    weather_service = get_weather_service()
+    # Initialize services
+    try:
+        chatbot_service = get_chatbot()
+        weather_service = get_weather_service()
+        print("✅ Chatbot Service initialized")
+        print("✅ Weather Service initialized")
+    except Exception as e:
+        print(f"⚠️ Warning: Service initialization error: {e}")
     
-    print("✅ ML Service initialized")
-    print("✅ Weather Service initialized")
     print("🚀 Agrotech API is ready!")
     
     yield
     
     # Shutdown
     print("Shutting down Agrotech API...")
-    if weather_service:
-        await weather_service.close_session()
     print("👋 Goodbye!")
 
 app = FastAPI(
-    title="Agrotech API",
+    title=os.getenv("APP_NAME", "Agrotech API"),
     description="Advanced Agricultural Technology API for crop recommendation, soil analysis, and smart farming solutions",
-    version="1.0.0",
+    version=os.getenv("APP_VERSION", "1.0.0"),
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc"
@@ -52,13 +72,75 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
-app.include_router(crops.router, prefix="/api/crops", tags=["Crop Recommendation"])
-app.include_router(soil.router, prefix="/api/soil", tags=["Soil Analysis"])
-app.include_router(weather.router, prefix="/api/weather", tags=["Weather Data"])
-app.include_router(predictions.router, prefix="/api/predictions", tags=["Prediction History"])
-app.include_router(users.router, prefix="/api/users", tags=["User Management"])
-app.include_router(data.router, prefix="/api/data", tags=["Data Management"])
+# Include routers - commented out for now, add your specific endpoints
+# app.include_router(crops.router, prefix="/api/crops", tags=["Crop Recommendation"])
+
+# Chat endpoints
+@app.post("/chat", tags=["Chat"])
+async def send_chat_message(request: ChatRequest):
+    """Send a message to the AI chatbot"""
+    try:
+        if not chatbot_service:
+            raise HTTPException(status_code=503, detail="Chatbot service not available")
+        
+        response = chatbot_service.chat(
+            message=request.message,
+            context=request.context,
+            session_id=request.session_id
+        )
+        
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Chat error: {str(e)}")
+
+@app.get("/chat/history", tags=["Chat"])
+async def get_chat_history(session_id: str, limit: int = 10):
+    """Get chat history for a session"""
+    try:
+        if not chatbot_service:
+            raise HTTPException(status_code=503, detail="Chatbot service not available")
+        
+        history = chatbot_service.get_chat_history(session_id, limit)
+        return {"history": history, "session_id": session_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Chat history error: {str(e)}")
+
+# Weather endpoints
+@app.get("/weather/current", tags=["Weather"])
+async def get_current_weather(lat: float, lng: float):
+    """Get current weather for given coordinates"""
+    try:
+        if not weather_service:
+            raise HTTPException(status_code=503, detail="Weather service not available")
+        
+        weather_data = await weather_service.get_current_weather(lat, lng)
+        return weather_data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Weather error: {str(e)}")
+
+@app.get("/weather/forecast", tags=["Weather"])
+async def get_weather_forecast(lat: float, lng: float, days: int = 5):
+    """Get weather forecast for given coordinates"""
+    try:
+        if not weather_service:
+            raise HTTPException(status_code=503, detail="Weather service not available")
+        
+        forecast_data = await weather_service.get_weather_forecast(lat, lng, days)
+        return forecast_data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Weather forecast error: {str(e)}")
+
+@app.get("/weather/city/{city}", tags=["Weather"])
+async def get_weather_by_city(city: str):
+    """Get current weather by city name"""
+    try:
+        if not weather_service:
+            raise HTTPException(status_code=503, detail="Weather service not available")
+        
+        weather_data = await weather_service.get_weather_by_city(city)
+        return weather_data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Weather error: {str(e)}")
 
 @app.get("/", tags=["Root"])
 async def root():
@@ -101,7 +183,7 @@ async def health_check():
         "timestamp": datetime.now().isoformat(),
         "version": "1.0.0",
         "services": {
-            "ml_service": "ready" if ml_service else "not_initialized",
+            "chatbot_service": "ready" if chatbot_service else "not_initialized",
             "weather_service": "ready" if weather_service else "not_initialized"
         },
         "api_info": {
@@ -142,8 +224,8 @@ if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
         "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info"
+        host=os.getenv("HOST", "0.0.0.0"),
+        port=int(os.getenv("PORT", 8000)),
+        reload=os.getenv("DEBUG", "True").lower() == "true",
+        log_level=os.getenv("LOG_LEVEL", "info")
     )

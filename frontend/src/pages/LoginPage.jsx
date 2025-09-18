@@ -34,7 +34,6 @@ const LoginPage = () => {
     phone: "",
     farmName: "",
   });
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -48,6 +47,14 @@ const LoginPage = () => {
 
   const handleLanguageChange = (e) => {
     actions.setLanguage(e.target.value);
+  };
+
+  const handleDemoLogin = () => {
+    setFormData({
+      name: "राहुल शर्मा",
+      phone: "+91 98765 43210",
+      farmName: "ग्रीन वैली फार्म",
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -117,10 +124,10 @@ const LoginPage = () => {
             gutterBottom
             sx={{ fontWeight: 600 }}
           >
-            {getTranslation("welcome")}
+            {getTranslation("welcomeToAgrotech")}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Enter your details to access your farm dashboard
+            {getTranslation("enterDetails")}
           </Typography>
         </Box>
 
@@ -168,7 +175,7 @@ const LoginPage = () => {
           <TextField
             fullWidth
             name="name"
-            label="Full Name"
+            label={getTranslation("fullName")}
             value={formData.name}
             onChange={handleInputChange}
             required
@@ -186,7 +193,7 @@ const LoginPage = () => {
           <TextField
             fullWidth
             name="phone"
-            label="Phone Number"
+            label={getTranslation("phoneNumber")}
             value={formData.phone}
             onChange={handleInputChange}
             required
@@ -204,7 +211,7 @@ const LoginPage = () => {
           <TextField
             fullWidth
             name="farmName"
-            label="Farm Name (Optional)"
+            label={getTranslation("farmNameOptional")}
             value={formData.farmName}
             onChange={handleInputChange}
             margin="normal"
@@ -234,9 +241,32 @@ const LoginPage = () => {
                 transform: "translateY(-1px)",
               },
               transition: "all 0.3s ease",
+              mb: 2,
             }}
           >
             {loading ? "Signing In..." : getTranslation("login")}
+          </Button>
+
+          {/* Demo Login Button */}
+          <Button
+            fullWidth
+            variant="outlined"
+            onClick={handleDemoLogin}
+            sx={{
+              py: 1.5,
+              borderRadius: 2,
+              fontWeight: 600,
+              fontSize: "1rem",
+              textTransform: "none",
+              borderColor: "#4caf50",
+              color: "#4caf50",
+              "&:hover": {
+                borderColor: "#45a049",
+                backgroundColor: "rgba(76, 175, 80, 0.04)",
+              },
+            }}
+          >
+            {getTranslation("demoLogin")}
           </Button>
         </form>
 
@@ -247,7 +277,7 @@ const LoginPage = () => {
             color="text.secondary"
             sx={{ fontWeight: 500 }}
           >
-            Demo Mode: Enter any name and phone number to access the app
+            {getTranslation("demoMode")}
           </Typography>
         </Box>
 

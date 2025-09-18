@@ -8,17 +8,12 @@ import {
   Avatar,
   Chip,
   Button,
+  Alert,
 } from "@mui/material";
-import {
-  ArrowBack,
-  Send,
-  SmartToy,
-  Person,
-  Mic,
-  AttachFile,
-} from "@mui/icons-material";
+import { ArrowBack, Send, SmartToy, Person } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
+import apiService from "../services/api";
 
 const ChatPage = () => {
   const navigate = useNavigate();
@@ -27,6 +22,7 @@ const ChatPage = () => {
 
   const [message, setMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [error, setError] = useState(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -37,10 +33,11 @@ const ChatPage = () => {
   }, [state.chatHistory]);
 
   const handleSendMessage = async () => {
-    if (!message.trim()) return;
+    if (!message.trim() || isTyping) return;
 
     const userMessage = message.trim();
     setMessage("");
+    setError(null);
 
     // Add user message
     actions.addChatMessage({
@@ -49,83 +46,44 @@ const ChatPage = () => {
       type: "text",
     });
 
-    // Simulate AI typing
+    // Set typing indicator
     setIsTyping(true);
 
-    // Generate AI response
-    setTimeout(() => {
-      const aiResponse = generateAIResponse(userMessage);
+    try {
+      // Get farm context for better AI responses
+      const farmContext = {
+        fields: state.fields,
+        user: state.user,
+        currentLocation: state.currentLocation,
+      };
+
+      // Get AI response using API service
+      const response = await apiService.sendChatMessage(
+        userMessage,
+        farmContext
+      );
+
+      // Add AI response
       actions.addChatMessage({
         sender: "assistant",
-        message: aiResponse,
+        message: response.message || response,
         type: "text",
       });
+    } catch (error) {
+      console.error("AI Chat Error:", error);
+      setError("Failed to get AI response. Please try again.");
+
+      // Add fallback response
+      actions.addChatMessage({
+        sender: "assistant",
+        message:
+          "I'm sorry, I'm having trouble processing your request right now. Please try again in a moment. For immediate help, you can check your field details or contact support.",
+        type: "text",
+      });
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
-
-  const generateAIResponse = (userMessage) => {
-    const message = userMessage.toLowerCase();
-
-    if (
-      message.includes("weather") ||
-      message.includes("rain") ||
-      message.includes("temperature")
-    ) {
-      return "Based on current weather data, today will be partly cloudy with temperatures around 22°C. There's a 30% chance of rain in the evening. I recommend checking soil moisture levels before any irrigation activities.";
-    }
-
-    if (message.includes("fertilizer") || message.includes("nutrient")) {
-      return "For your current crops, I recommend a balanced NPK fertilizer (10-26-26) application. Based on your soil analysis, apply 2-3 kg per acre. The best time for application is early morning when soil moisture is optimal.";
-    }
-
-    if (
-      message.includes("disease") ||
-      message.includes("pest") ||
-      message.includes("problem")
-    ) {
-      return "I've reviewed your recent field photos. The leaf spots indicate early signs of fungal infection. Apply copper-based fungicide spray in the evening. Ensure good air circulation and avoid overhead watering for the next few days.";
-    }
-
-    if (
-      message.includes("water") ||
-      message.includes("irrigation") ||
-      message.includes("moisture")
-    ) {
-      return "Your soil moisture levels are currently at 65%, which is good for wheat cultivation. I recommend irrigating when levels drop below 60%. Based on weather forecast, next watering should be in 2-3 days.";
-    }
-
-    if (message.includes("harvest") || message.includes("when to harvest")) {
-      return "Based on your planting date and crop growth data, your wheat should be ready for harvest in approximately 45-50 days. I'll monitor the progress and send you alerts when the optimal harvest time approaches.";
-    }
-
-    if (
-      message.includes("price") ||
-      message.includes("market") ||
-      message.includes("sell")
-    ) {
-      return "Current market prices: Wheat ₹2,100/quintal (+2.5%), Rice ₹3,200/quintal (-1.2%), Maize ₹1,850/quintal (+0.8%). Best selling locations are within 50km of your farm. Would you like me to find nearby buyers?";
-    }
-
-    if (
-      message.includes("hello") ||
-      message.includes("hi") ||
-      message.includes("help")
-    ) {
-      return "Hello! I'm your AI farming assistant. I can help you with crop management, disease detection, weather updates, fertilizer recommendations, and market prices. What would you like to know about your farm today?";
-    }
-
-    // Default response
-    return "I understand you're asking about farm management. Could you be more specific? I can help with weather updates, crop health monitoring, fertilizer recommendations, irrigation scheduling, disease detection, and market prices. What specific area would you like assistance with?";
-  };
-
-  const quickQuestions = [
-    "What's the weather forecast?",
-    "When should I water my crops?",
-    "Check my field health",
-    "Current market prices",
-    "Disease prevention tips",
-  ];
 
   const handleQuickQuestion = (question) => {
     setMessage(question);
@@ -137,6 +95,14 @@ const ChatPage = () => {
       handleSendMessage();
     }
   };
+
+  const quickQuestions = [
+    getTranslation("whatWeatherForecast"),
+    getTranslation("whenWaterCrops"),
+    getTranslation("checkFieldHealth"),
+    getTranslation("currentMarketPrices"),
+    getTranslation("diseasePreventionTips"),
+  ];
 
   return (
     <Box
@@ -161,11 +127,11 @@ const ChatPage = () => {
           </IconButton>
           <SmartToy sx={{ mr: 1 }} />
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
-            AI Farm Assistant
+            {getTranslation("aiFarmAssistant")}
           </Typography>
         </Box>
         <Typography variant="body2" sx={{ opacity: 0.9 }}>
-          Ask me anything about your farm and crops
+          {getTranslation("askAboutFarm")}
         </Typography>
       </Box>
 
@@ -175,15 +141,22 @@ const ChatPage = () => {
           flex: 1,
           overflow: "auto",
           p: 2,
-          pb: 1,
+          pb: "80px", // Extra padding at bottom for navbar
           bgcolor: "#f5f5f5",
         }}
       >
+        {/* Error Display */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
+
         {/* Quick Questions */}
         {state.chatHistory.length <= 1 && (
           <Box sx={{ mb: 3 }}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              Quick questions:
+              {getTranslation("quickQuestions")}:
             </Typography>
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
               {quickQuestions.map((question, index) => (
@@ -313,6 +286,7 @@ const ChatPage = () => {
           p: 2,
           bgcolor: "white",
           borderTop: "1px solid #e0e0e0",
+          marginBottom: "80px", // Increased margin for bottom navigation
           flexShrink: 0,
         }}
       >
@@ -324,7 +298,7 @@ const ChatPage = () => {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Ask about your crops, weather, or farming tips..."
+            placeholder={getTranslation("askAboutCrops")}
             variant="outlined"
             size="small"
             sx={{

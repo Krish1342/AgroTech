@@ -1,368 +1,243 @@
-import axios from 'axios'
+import axios from "axios";
+import config from "../config/index.js";
 
-// Create axios instance with base configuration
-export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
-  timeout: 30000,
+// Create axios instance with default configuration
+const api = axios.create({
+  baseURL: config.api.baseUrl,
+  timeout: config.api.timeout,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
-})
+});
 
-// Request interceptor to add auth token
+// Request interceptor for adding auth tokens if needed
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token')
+    // Add auth token if available
+    const token = localStorage.getItem("auth_token");
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`
+      config.headers.Authorization = `Bearer ${token}`;
     }
-    return config
+    return config;
   },
   (error) => {
-    return Promise.reject(error)
+    return Promise.reject(error);
   }
-)
+);
 
-// Response interceptor for error handling
+// Response interceptor for handling common errors
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    return response;
+  },
   (error) => {
+    // Handle common errors
     if (error.response?.status === 401) {
-      // Token expired or invalid
-      localStorage.removeItem('token')
-      window.location.href = '/login'
+      // Unauthorized - redirect to login
+      localStorage.removeItem("auth_token");
+      window.location.href = "/login";
     }
-    return Promise.reject(error)
+    return Promise.reject(error);
   }
-)
+);
 
-// API service functions
-export const cropService = {
-  // Get crop recommendation
-  recommend: async (data) => {
-    const response = await api.post('/crops/recommend', data)
-    return response.data
-  },
-
-  // Get crop information
-  getCropInfo: async (cropName) => {
-    const response = await api.get(`/crops/info/${cropName}`)
-    return response.data
-  },
-
-  // Get all crops
-  getAllCrops: async () => {
-    const response = await api.get('/crops/all')
-    return response.data
-  },
-
-  // Get fertilizer recommendation
-  getFertilizerRecommendation: async (data) => {
-    const response = await api.post('/crops/fertilizer', data)
-    return response.data
-  },
-
-  // Get growing tips
-  getGrowingTips: async (cropName) => {
-    const response = await api.get(`/crops/growing-tips/${cropName}`)
-    return response.data
-  },
-
-  // Get seasonal recommendations
-  getSeasonalRecommendations: async (season, location) => {
-    const response = await api.get('/crops/seasonal', {
-      params: { season, location }
-    })
-    return response.data
-  }
-}
-
-export const soilService = {
-  // Classify soil from image
-  classifyImage: async (imageFile) => {
-    const formData = new FormData()
-    formData.append('image', imageFile)
-    
-    const response = await api.post('/soil/classify', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    })
-    return response.data
-  },
-
-  // Analyze soil health
-  analyzeHealth: async (data) => {
-    const response = await api.post('/soil/health', data)
-    return response.data
-  },
-
-  // Get soil recommendations
-  getRecommendations: async (soilType, location) => {
-    const response = await api.get('/soil/recommendations', {
-      params: { soil_type: soilType, location }
-    })
-    return response.data
-  },
-
-  // Get soil improvement tips
-  getImprovementTips: async (soilType) => {
-    const response = await api.get(`/soil/improvement/${soilType}`)
-    return response.data
-  }
-}
-
-export const weatherService = {
-  // Get current weather
-  getCurrentWeather: async (latitude, longitude) => {
-    const response = await api.post('/weather/current', {
-      latitude,
-      longitude
-    })
-    return response.data
-  },
-
-  // Get weather forecast
-  getForecast: async (latitude, longitude, days = 5) => {
-    const response = await api.post('/weather/forecast', {
-      latitude,
-      longitude,
-      days
-    })
-    return response.data
-  },
-
-  // Get agricultural advisories
-  getAdvisories: async (latitude, longitude) => {
-    const response = await api.post('/weather/advisories', {
-      latitude,
-      longitude
-    })
-    return response.data
-  },
-
-  // Get weather alerts
-  getAlerts: async (latitude, longitude) => {
-    const response = await api.post('/weather/alerts', {
-      latitude,
-      longitude
-    })
-    return response.data
-  },
-
-  // Get crop calendar
-  getCropCalendar: async (latitude, longitude, cropType) => {
-    const response = await api.post('/weather/crop-calendar', {
-      latitude,
-      longitude,
-      crop_type: cropType
-    })
-    return response.data
-  }
-}
-
-export const predictionService = {
-  // Get prediction history
-  getHistory: async (page = 1, per_page = 10, prediction_type = null) => {
-    const response = await api.get('/predictions/history', {
-      params: { page, per_page, prediction_type }
-    })
-    return response.data
-  },
-
-  // Get prediction statistics
-  getStats: async () => {
-    const response = await api.get('/predictions/stats')
-    return response.data
-  },
-
-  // Get prediction details
-  getDetails: async (predictionId) => {
-    const response = await api.get(`/predictions/${predictionId}`)
-    return response.data
-  },
-
-  // Delete prediction
-  deletePrediction: async (predictionId) => {
-    const response = await api.delete(`/predictions/${predictionId}`)
-    return response.data
-  },
-
-  // Export predictions
-  exportPredictions: async () => {
-    const response = await api.get('/predictions/export/csv', {
-      responseType: 'blob'
-    })
-    return response.data
-  },
-
-  // Create batch predictions
-  createBatch: async (requests) => {
-    const response = await api.post('/predictions/batch', requests)
-    return response.data
-  },
-
-  // Get monthly trends
-  getMonthlyTrends: async () => {
-    const response = await api.get('/predictions/trends/monthly')
-    return response.data
-  },
-
-  // Get recommendations based on history
-  getRecommendations: async () => {
-    const response = await api.get('/predictions/recommendations/based-on-history')
-    return response.data
-  }
-}
-
-export const userService = {
-  // Get user profile
-  getProfile: async () => {
-    const response = await api.get('/users/profile')
-    return response.data
-  },
-
-  // Update user profile
-  updateProfile: async (data) => {
-    const response = await api.put('/users/profile', data)
-    return response.data
-  },
-
-  // Change password
-  changePassword: async (oldPassword, newPassword) => {
-    const response = await api.post('/users/change-password', {
-      old_password: oldPassword,
-      new_password: newPassword
-    })
-    return response.data
-  },
-
-  // Get all users (admin)
-  getAllUsers: async () => {
-    const response = await api.get('/users/users')
-    return response.data
-  },
-
-  // Get active sessions
-  getSessions: async () => {
-    const response = await api.get('/users/sessions')
-    return response.data
-  },
-
-  // Delete account
-  deleteAccount: async () => {
-    const response = await api.delete('/users/account')
-    return response.data
-  },
-
-  // Reset password
-  resetPassword: async (email) => {
-    const response = await api.post('/users/reset-password', { email })
-    return response.data
-  }
-}
-
-export const dataService = {
-  // Upload CSV data
-  uploadCSV: async (file, dataType, description) => {
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('data_type', dataType)
-    if (description) {
-      formData.append('description', description)
+// API Service Class
+class ApiService {
+  // Chat/AI endpoints
+  async sendChatMessage(message, context = {}) {
+    try {
+      const response = await api.post("/chat", {
+        message,
+        context,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Chat API error:", error);
+      throw new Error("Failed to send message to AI assistant");
     }
-    
-    const response = await api.post('/data/upload/csv', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    })
-    return response.data
-  },
+  }
 
-  // Get uploaded datasets
-  getDatasets: async () => {
-    const response = await api.get('/data/datasets')
-    return response.data
-  },
+  async getChatHistory(limit = 10) {
+    try {
+      const response = await api.get(`/chat/history?limit=${limit}`);
+      return response.data;
+    } catch (error) {
+      console.error("Chat history API error:", error);
+      throw new Error("Failed to fetch chat history");
+    }
+  }
 
-  // Get dataset details
-  getDatasetDetails: async (uploadId) => {
-    const response = await api.get(`/data/datasets/${uploadId}`)
-    return response.data
-  },
+  // Weather endpoints
+  async getCurrentWeather(lat, lng) {
+    try {
+      const response = await api.get(`/weather/current?lat=${lat}&lng=${lng}`);
+      return response.data;
+    } catch (error) {
+      console.error("Current weather API error:", error);
+      throw new Error("Failed to fetch current weather");
+    }
+  }
 
-  // Validate dataset
-  validateDataset: async (uploadId, expectedColumns = null) => {
-    const response = await api.post(`/data/validate/${uploadId}`, {
-      expected_columns: expectedColumns
-    })
-    return response.data
-  },
+  async getWeatherForecast(lat, lng, days = 5) {
+    try {
+      const response = await api.get(
+        `/weather/forecast?lat=${lat}&lng=${lng}&days=${days}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Weather forecast API error:", error);
+      throw new Error("Failed to fetch weather forecast");
+    }
+  }
 
-  // Transform dataset
-  transformDataset: async (uploadId, transformations) => {
-    const response = await api.post(`/data/transform/${uploadId}`, transformations)
-    return response.data
-  },
+  async getWeatherByCity(city) {
+    try {
+      const response = await api.get(
+        `/weather/city/${encodeURIComponent(city)}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Weather by city API error:", error);
+      throw new Error("Failed to fetch weather for city");
+    }
+  }
 
-  // Export dataset
-  exportDataset: async (uploadId, format = 'csv') => {
-    const response = await api.get(`/data/export/${uploadId}`, {
-      params: { format },
-      responseType: format === 'csv' ? 'blob' : 'json'
-    })
-    return response.data
-  },
+  // Field management endpoints
+  async getFields() {
+    try {
+      const response = await api.get("/fields");
+      return response.data;
+    } catch (error) {
+      console.error("Fields API error:", error);
+      throw new Error("Failed to fetch fields");
+    }
+  }
 
-  // Delete dataset
-  deleteDataset: async (uploadId) => {
-    const response = await api.delete(`/data/datasets/${uploadId}`)
-    return response.data
-  },
+  async getField(fieldId) {
+    try {
+      const response = await api.get(`/fields/${fieldId}`);
+      return response.data;
+    } catch (error) {
+      console.error("Field API error:", error);
+      throw new Error("Failed to fetch field details");
+    }
+  }
 
-  // Get data statistics
-  getStatistics: async () => {
-    const response = await api.get('/data/statistics')
-    return response.data
-  },
+  async updateField(fieldId, data) {
+    try {
+      const response = await api.put(`/fields/${fieldId}`, data);
+      return response.data;
+    } catch (error) {
+      console.error("Update field API error:", error);
+      throw new Error("Failed to update field");
+    }
+  }
 
-  // Create sample data
-  createSampleData: async () => {
-    const response = await api.post('/data/sample-data')
-    return response.data
-  },
+  async createField(fieldData) {
+    try {
+      const response = await api.post("/fields", fieldData);
+      return response.data;
+    } catch (error) {
+      console.error("Create field API error:", error);
+      throw new Error("Failed to create field");
+    }
+  }
 
-  // Get data schema
-  getSchema: async (dataType) => {
-    const response = await api.get(`/data/schema/${dataType}`)
-    return response.data
+  // Disease detection endpoints
+  async analyzePhoto(imageFile, fieldId = null) {
+    try {
+      const formData = new FormData();
+      formData.append("image", imageFile);
+      if (fieldId) {
+        formData.append("field_id", fieldId);
+      }
+
+      const response = await api.post("/disease/analyze", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Photo analysis API error:", error);
+      throw new Error("Failed to analyze photo");
+    }
+  }
+
+  async getDiseaseHistory(limit = 20) {
+    try {
+      const response = await api.get(`/disease/history?limit=${limit}`);
+      return response.data;
+    } catch (error) {
+      console.error("Disease history API error:", error);
+      throw new Error("Failed to fetch disease detection history");
+    }
+  }
+
+  // Market prices endpoints
+  async getMarketPrices(location = null) {
+    try {
+      const params = location
+        ? `?location=${encodeURIComponent(location)}`
+        : "";
+      const response = await api.get(`/market/prices${params}`);
+      return response.data;
+    } catch (error) {
+      console.error("Market prices API error:", error);
+      throw new Error("Failed to fetch market prices");
+    }
+  }
+
+  // User/Auth endpoints
+  async login(credentials) {
+    try {
+      const response = await api.post("/auth/login", credentials);
+      if (response.data.token) {
+        localStorage.setItem("auth_token", response.data.token);
+      }
+      return response.data;
+    } catch (error) {
+      console.error("Login API error:", error);
+      throw new Error("Failed to login");
+    }
+  }
+
+  async logout() {
+    try {
+      await api.post("/auth/logout");
+      localStorage.removeItem("auth_token");
+      return { success: true };
+    } catch (error) {
+      console.error("Logout API error:", error);
+      // Still remove token locally even if server call fails
+      localStorage.removeItem("auth_token");
+      throw new Error("Failed to logout");
+    }
+  }
+
+  async getUserProfile() {
+    try {
+      const response = await api.get("/auth/profile");
+      return response.data;
+    } catch (error) {
+      console.error("Profile API error:", error);
+      throw new Error("Failed to fetch user profile");
+    }
+  }
+
+  // Health check
+  async healthCheck() {
+    try {
+      const response = await api.get("/health");
+      return response.data;
+    } catch (error) {
+      console.error("Health check API error:", error);
+      throw new Error("Backend service unavailable");
+    }
   }
 }
 
-// Utility functions
-export const downloadFile = (blob, filename) => {
-  const url = window.URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.style.display = 'none'
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  window.URL.revokeObjectURL(url)
-  document.body.removeChild(a)
-}
+// Create and export singleton instance
+const apiService = new ApiService();
 
-export const formatError = (error) => {
-  if (error.response?.data?.detail) {
-    return error.response.data.detail
-  } else if (error.response?.data?.message) {
-    return error.response.data.message
-  } else if (error.message) {
-    return error.message
-  } else {
-    return 'An unexpected error occurred'
-  }
-}
-
-export default api
+export default apiService;

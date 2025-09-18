@@ -4,6 +4,7 @@ import Container from "@mui/material/Container";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppProvider, useAppContext } from "./context/AppContext";
 import BottomNavigation from "./components/BottomNavigation";
+import LoadingScreen from "./components/LoadingScreen";
 import WelcomePage from "./pages/WelcomePage";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
@@ -51,7 +52,13 @@ const theme = createTheme({
 
 // Protected Route wrapper
 function ProtectedRoute({ children }) {
-  const { state } = useAppContext();
+  const { state, isLoading, isInitialized } = useAppContext();
+
+  // Show loading screen while checking authentication
+  if (!isInitialized || isLoading) {
+    return <LoadingScreen message="Initializing your farm dashboard..." />;
+  }
+
   return state.user ? children : <Navigate to="/login" replace />;
 }
 

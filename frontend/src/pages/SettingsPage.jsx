@@ -65,29 +65,7 @@ const SettingsPage = () => {
     navigate("/login");
   };
 
-  const settingSections = [
-    {
-      title: "Account",
-      icon: <Person />,
-      items: [
-        {
-          label: "Profile Information",
-          value: state.user?.name || "Not set",
-          action: () => {},
-        },
-        {
-          label: "Phone Number",
-          value: state.user?.phone || "Not set",
-          action: () => {},
-        },
-        {
-          label: "Farm Name",
-          value: state.user?.farmName || "Not set",
-          action: () => {},
-        },
-      ],
-    },
-  ];
+  // Remove the unused settingSections array
 
   return (
     <Box className="page">
@@ -123,26 +101,26 @@ const SettingsPage = () => {
             <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
               <Person sx={{ mr: 1, color: "text.secondary" }} />
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                Account Information
+                {getTranslation("accountInformation")}
               </Typography>
             </Box>
             <List disablePadding>
               <ListItem>
                 <ListItemText
-                  primary="Name"
-                  secondary={state.user?.name || "Not set"}
+                  primary={getTranslation("name")}
+                  secondary={state.user?.name || getTranslation("notSet")}
                 />
               </ListItem>
               <ListItem>
                 <ListItemText
-                  primary="Phone"
-                  secondary={state.user?.phone || "Not set"}
+                  primary={getTranslation("phone")}
+                  secondary={state.user?.phone || getTranslation("notSet")}
                 />
               </ListItem>
               <ListItem>
                 <ListItemText
-                  primary="Farm Name"
-                  secondary={state.user?.farmName || "Not set"}
+                  primary={getTranslation("farmName")}
+                  secondary={state.user?.farmName || getTranslation("notSet")}
                 />
               </ListItem>
             </List>
