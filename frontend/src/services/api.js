@@ -235,6 +235,49 @@ class ApiService {
       throw new Error("Backend service unavailable");
     }
   }
+
+  // ThingSpeak IoT endpoints
+  async getCurrentSensorData() {
+    try {
+      const response = await api.get("/api/thingspeak/current");
+      return response.data;
+    } catch (error) {
+      console.error("Current sensor data API error:", error);
+      throw new Error("Failed to fetch current sensor data");
+    }
+  }
+
+  async getHistoricalSensorData(results = 15) {
+    try {
+      const response = await api.get(
+        `/api/thingspeak/historical?results=${results}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Historical sensor data API error:", error);
+      throw new Error("Failed to fetch historical sensor data");
+    }
+  }
+
+  async getRecommendations() {
+    try {
+      const response = await api.get("/api/thingspeak/recommendations");
+      return response.data;
+    } catch (error) {
+      console.error("Recommendations API error:", error);
+      throw new Error("Failed to fetch recommendations");
+    }
+  }
+
+  async getDeviceStatus() {
+    try {
+      const response = await api.get("/api/thingspeak/device-status");
+      return response.data;
+    } catch (error) {
+      console.error("Device status API error:", error);
+      throw new Error("Failed to fetch device status");
+    }
+  }
 }
 
 // Create and export singleton instance

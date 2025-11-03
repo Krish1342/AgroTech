@@ -4,6 +4,16 @@ A comprehensive agricultural management application that combines AI-powered far
 
 ## 🌟 Features
 
+### 📡 Real-Time IoT Monitoring (NEW!)
+
+- **ThingSpeak Integration**: Live sensor data from IoT devices
+- **Real-Time Dashboards**: Auto-refreshing charts and metrics
+- **NPK Monitoring**: Track soil Nitrogen, Phosphorus, and Potassium levels
+- **Environmental Sensors**: Moisture, temperature, and pH monitoring
+- **Historical Trends**: Visualize data patterns over time
+- **Smart Recommendations**: AI-powered fertilizer and crop suggestions based on sensor data
+- **Device Status**: Real-time connection monitoring
+
 ### 🤖 AI-Powered Farming Assistant
 
 - **Intelligent Chat Interface**: Get expert farming advice through natural language conversations
@@ -52,6 +62,7 @@ A comprehensive agricultural management application that combines AI-powered far
 - API Keys:
   - [Groq API Key](https://console.groq.com/keys) for AI features
   - [OpenWeatherMap API Key](https://openweathermap.org/api) for weather data
+  - [ThingSpeak Account](https://thingspeak.com/) for IoT sensor integration (optional)
 
 ### Frontend Setup
 
@@ -103,6 +114,12 @@ A comprehensive agricultural management application that combines AI-powered far
    ```env
    OPENWEATHER_API_KEY=your_openweather_api_key_here
    SECRET_KEY=your_secret_key_here
+
+   # ThingSpeak IoT Integration (Optional)
+   THINGSPEAK_CHANNEL_ID=your_channel_id
+   THINGSPEAK_READ_API_KEY=your_read_api_key
+   THINGSPEAK_WRITE_API_KEY=your_write_api_key
+   THINGSPEAK_MODEL_FIELDS=1,2,3,4,5,6
    ```
 
 3. **Install Dependencies & Start**
@@ -114,6 +131,21 @@ A comprehensive agricultural management application that combines AI-powered far
 
 4. **API Access**
    Backend API available at http://localhost:8000
+
+### ThingSpeak IoT Setup (Optional)
+
+For real-time sensor monitoring:
+
+1. **Complete Setup Guide**: See [THINGSPEAK_SETUP.md](./THINGSPEAK_SETUP.md)
+
+2. **Quick Test**: Send test data to your channel
+
+   ```bash
+   cd backend
+   python send_test_data.py
+   ```
+
+3. **View Live Data**: Navigate to Dashboard → My Field in the app
 
 ## 🔧 Configuration
 

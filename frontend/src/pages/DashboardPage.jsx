@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -8,10 +8,17 @@ import {
   Chip,
   IconButton,
   Button,
+  CircularProgress,
 } from "@mui/material";
-import { ArrowForward, Agriculture } from "@mui/icons-material";
+import {
+  ArrowForward,
+  Agriculture,
+  Refresh,
+  Sensors,
+} from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
+import apiService from "../services/api";
 
 // Progress Circle Component
 const ProgressCircle = ({
@@ -80,6 +87,29 @@ const ProgressCircle = ({
 const DashboardPage = () => {
   const navigate = useNavigate();
   const { state, getTranslation } = useAppContext();
+  const [deviceStatus, setDeviceStatus] = useState(null);
+  const [sensorData, setSensorData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDeviceData();
+  }, []);
+
+  const fetchDeviceData = async () => {
+    try {
+      setLoading(true);
+      const [status, data] = await Promise.all([
+        apiService.getDeviceStatus(),
+        apiService.getCurrentSensorData(),
+      ]);
+      setDeviceStatus(status);
+      setSensorData(data);
+    } catch (error) {
+      console.error("Error fetching device data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleFieldClick = (fieldId) => {
     navigate(`/field/${fieldId}`);
@@ -126,139 +156,167 @@ const DashboardPage = () => {
           marginBottom: 2,
         }}
       >
-        <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
-          {getTranslation("myFields")}
-        </Typography>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
+            {getTranslation("myFields")}
+          </Typography>
+          <IconButton
+            onClick={fetchDeviceData}
+            sx={{ color: "white" }}
+            disabled={loading}
+          >
+            {loading ? (
+              <CircularProgress size={24} sx={{ color: "white" }} />
+            ) : (
+              <Refresh />
+            )}
+          </IconButton>
+        </Box>
+
+        {/* Device Status */}
+        {deviceStatus && (
+          <Box sx={{ mt: 2 }}>
+            <Chip
+              icon={<Sensors />}
+              label={
+                deviceStatus.connected
+                  ? "Device Connected"
+                  : "Device Disconnected"
+              }
+              sx={{
+                bgcolor: deviceStatus.connected
+                  ? "rgba(76, 175, 80, 0.3)"
+                  : "rgba(244, 67, 54, 0.3)",
+                color: "white",
+                fontWeight: 600,
+                border: `2px solid ${
+                  deviceStatus.connected ? "#fff" : "#ffcdd2"
+                }`,
+              }}
+            />
+            <Typography variant="caption" sx={{ display: "block", mt: 1 }}>
+              {deviceStatus.device_name || "AgroTech Sensor Node"}
+            </Typography>
+          </Box>
+        )}
       </Box>
 
       {/* Content */}
       <Box sx={{ px: 1 }}>
-        {/* Fields Grid */}
+        {/* Single Field Card */}
         <Grid container spacing={2}>
-          {state.fields.slice(0, 2).map((field, index) => (
-            <Grid item xs={12} key={field.id}>
-              <Card
+          <Grid item xs={12}>
+            <Card
+              sx={{
+                cursor: "pointer",
+                transition: "all 0.3s ease",
+                borderRadius: 1.5,
+                border: "1px solid #e0e0e0",
+                overflow: "hidden",
+                "&:hover": {
+                  transform: "translateY(-2px)",
+                  boxShadow: "0 6px 20px rgba(0,0,0,0.15)",
+                },
+              }}
+              onClick={() => handleFieldClick(1)}
+            >
+              {/* Field Image */}
+              <Box
                 sx={{
-                  cursor: "pointer",
-                  transition: "all 0.3s ease",
-                  borderRadius: 1.5,
-                  border: "1px solid #e0e0e0",
-                  overflow: "hidden",
-                  "&:hover": {
-                    transform: "translateY(-2px)",
-                    boxShadow: "0 6px 20px rgba(0,0,0,0.15)",
-                  },
+                  display: "flex",
+                  height: 180,
                 }}
-                onClick={() => handleFieldClick(field.id)}
               >
-                {/* Field Image */}
+                {/* Left side - Image */}
                 <Box
                   sx={{
-                    display: "flex",
-                    height: 140,
+                    width: "40%",
+                    backgroundImage: `url(data:image/svg+xml;charset=utf-8,${encodeURIComponent(`
+                      <svg width="100" height="100" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="100" height="100" fill="#4caf50"/>
+                        <text x="50" y="55" font-family="Arial" font-size="14" fill="white" text-anchor="middle">🌾</text>
+                      </svg>
+                    `)})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    position: "relative",
                   }}
                 >
-                  {/* Left side - Image */}
-                  <Box
+                  {/* Status Badge */}
+                  <Chip
+                    label="Live Monitoring"
+                    size="small"
                     sx={{
-                      width: "40%",
-                      backgroundImage: `url(data:image/svg+xml;charset=utf-8,${encodeURIComponent(`
-                        <svg width="100" height="100" xmlns="http://www.w3.org/2000/svg">
-                          <rect width="100" height="100" fill="${
-                            index === 0 ? "#4caf50" : "#2e7d32"
-                          }"/>
-                          <text x="50" y="55" font-family="Arial" font-size="14" fill="white" text-anchor="middle">🌾</text>
-                        </svg>
-                      `)})`,
-                      backgroundSize: "cover",
-                      backgroundPosition: "center",
-                      position: "relative",
+                      position: "absolute",
+                      top: 8,
+                      left: 8,
+                      bgcolor: "rgba(255,255,255,0.95)",
+                      color: "#4caf50",
+                      fontSize: "0.7rem",
+                      fontWeight: 600,
+                      animation: "pulse 2s infinite",
+                      "@keyframes pulse": {
+                        "0%, 100%": { opacity: 1 },
+                        "50%": { opacity: 0.8 },
+                      },
                     }}
-                  >
-                    {/* Health Badge */}
-                    <Chip
-                      label={`${field.overallHealth}%`}
-                      size="small"
-                      sx={{
-                        position: "absolute",
-                        top: 8,
-                        right: 8,
-                        bgcolor: "rgba(255,255,255,0.9)",
-                        color: getStatusColor(field.status),
-                        fontWeight: 600,
-                      }}
-                    />
+                  />
+                </Box>
 
-                    {/* Status Badge */}
-                    <Chip
-                      label={getStatusLabel(field.status, getTranslation)}
-                      icon={
-                        <Box
-                          sx={{
-                            width: 6,
-                            height: 6,
-                            borderRadius: "50%",
-                            bgcolor: getStatusColor(field.status),
-                          }}
-                        />
-                      }
-                      size="small"
-                      sx={{
-                        position: "absolute",
-                        top: 8,
-                        left: 8,
-                        bgcolor: "rgba(255,255,255,0.9)",
-                        color: "#333",
-                        fontSize: "0.7rem",
-                      }}
-                    />
-                  </Box>
+                {/* Right side - Content */}
+                <CardContent
+                  sx={{
+                    p: 2,
+                    width: "60%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Box>
+                    <Typography
+                      variant="h6"
+                      sx={{ fontWeight: 600, mb: 1, fontSize: "1.1rem" }}
+                    >
+                      My Field
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mb: 1.5 }}
+                    >
+                      IoT Monitored • 5 acres
+                    </Typography>
 
-                  {/* Right side - Content */}
-                  <CardContent
-                    sx={{
-                      p: 2,
-                      width: "60%",
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <Box>
-                      <Typography
-                        variant="h6"
-                        sx={{ fontWeight: 600, mb: 1, fontSize: "1rem" }}
-                      >
-                        {field.name}
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ mb: 1 }}
-                      >
-                        {field.crop} • {field.area}
-                      </Typography>
-
-                      {/* Quick Stats */}
+                    {/* Quick Stats */}
+                    {sensorData ? (
                       <Grid container spacing={1} sx={{ mb: 2 }}>
                         <Grid item xs={6}>
                           <Box
                             sx={{
                               textAlign: "center",
                               py: 0.5,
-                              bgcolor: "#f8f9fa",
+                              bgcolor: "#e3f2fd",
                               borderRadius: 1,
+                              border: "1px solid #2196f3",
                             }}
                           >
                             <Typography
                               variant="body2"
-                              sx={{ fontWeight: 600, color: "#2196f3" }}
+                              sx={{ fontWeight: 600, color: "#1976d2" }}
                             >
-                              {field.metrics.soilMoisture}%
+                              {sensorData.moisture?.toFixed(0) || "--"}%
                             </Typography>
                             <Typography
                               variant="caption"
                               color="text.secondary"
+                              sx={{ fontSize: "0.65rem" }}
                             >
                               {getTranslation("moisture")}
                             </Typography>
@@ -269,51 +327,121 @@ const DashboardPage = () => {
                             sx={{
                               textAlign: "center",
                               py: 0.5,
-                              bgcolor: "#f8f9fa",
+                              bgcolor: "#fff3e0",
                               borderRadius: 1,
+                              border: "1px solid #ff9800",
                             }}
                           >
                             <Typography
                               variant="body2"
-                              sx={{ fontWeight: 600, color: "#ff9800" }}
+                              sx={{ fontWeight: 600, color: "#f57c00" }}
                             >
-                              {field.metrics.temperature}°C
+                              {sensorData.temperature?.toFixed(1) || "--"}°C
                             </Typography>
                             <Typography
                               variant="caption"
                               color="text.secondary"
+                              sx={{ fontSize: "0.65rem" }}
                             >
                               {getTranslation("temp")}
                             </Typography>
                           </Box>
                         </Grid>
+                        <Grid item xs={4}>
+                          <Box
+                            sx={{
+                              textAlign: "center",
+                              py: 0.5,
+                              bgcolor: "#e8f5e9",
+                              borderRadius: 1,
+                            }}
+                          >
+                            <Typography
+                              variant="caption"
+                              sx={{ fontWeight: 600, color: "#2e7d32" }}
+                            >
+                              N: {sensorData.nitrogen?.toFixed(0) || "--"}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={4}>
+                          <Box
+                            sx={{
+                              textAlign: "center",
+                              py: 0.5,
+                              bgcolor: "#fff3e0",
+                              borderRadius: 1,
+                            }}
+                          >
+                            <Typography
+                              variant="caption"
+                              sx={{ fontWeight: 600, color: "#e65100" }}
+                            >
+                              P: {sensorData.phosphorus?.toFixed(0) || "--"}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={4}>
+                          <Box
+                            sx={{
+                              textAlign: "center",
+                              py: 0.5,
+                              bgcolor: "#e1f5fe",
+                              borderRadius: 1,
+                            }}
+                          >
+                            <Typography
+                              variant="caption"
+                              sx={{ fontWeight: 600, color: "#01579b" }}
+                            >
+                              K: {sensorData.potassium?.toFixed(0) || "--"}
+                            </Typography>
+                          </Box>
+                        </Grid>
                       </Grid>
-                    </Box>
+                    ) : (
+                      <Box sx={{ textAlign: "center", py: 2 }}>
+                        <CircularProgress size={24} />
+                      </Box>
+                    )}
+                  </Box>
 
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      size="small"
-                      endIcon={<ArrowForward />}
-                      sx={{
-                        borderColor: "#4caf50",
-                        color: "#4caf50",
-                        textTransform: "none",
-                        fontSize: "0.8rem",
-                        "&:hover": {
-                          borderColor: "#45a049",
-                          bgcolor: "rgba(76, 175, 80, 0.04)",
-                        },
-                      }}
-                    >
-                      {getTranslation("viewDetails")}
-                    </Button>
-                  </CardContent>
-                </Box>
-              </Card>
-            </Grid>
-          ))}
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    size="small"
+                    endIcon={<ArrowForward />}
+                    sx={{
+                      bgcolor: "#4caf50",
+                      color: "white",
+                      textTransform: "none",
+                      fontSize: "0.85rem",
+                      "&:hover": {
+                        bgcolor: "#45a049",
+                      },
+                    }}
+                  >
+                    {getTranslation("viewDetails")}
+                  </Button>
+                </CardContent>
+              </Box>
+            </Card>
+          </Grid>
         </Grid>
+
+        {/* Info Card */}
+        <Card sx={{ mt: 3, bgcolor: "#f5f5f5" }}>
+          <CardContent>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              <strong>📡 Real-Time Monitoring Active</strong>
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Your IoT sensors are collecting live data on soil nutrients (NPK),
+              moisture, temperature, and pH levels. Tap the field card above to
+              view detailed analytics and AI-powered recommendations.
+            </Typography>
+          </CardContent>
+        </Card>
 
         {/* Quick Actions */}
         <Box sx={{ mt: 4 }}>

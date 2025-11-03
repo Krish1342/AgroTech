@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -10,6 +10,12 @@ import {
   LinearProgress,
   Divider,
   IconButton,
+  CircularProgress,
+  Alert,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
 } from "@mui/material";
 import {
   ArrowBack,
@@ -23,9 +29,14 @@ import {
   Warning,
   CheckCircle,
   TrendingUp,
+  TrendingDown,
+  TrendingFlat,
+  Refresh,
+  CheckCircleOutline,
 } from "@mui/icons-material";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
+import apiService from "../services/api";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -36,6 +47,7 @@ import {
   Title,
   Tooltip,
   Legend,
+  Filler,
 } from "chart.js";
 
 ChartJS.register(
@@ -45,7 +57,8 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler
 );
 
 const FieldDetailsPage = () => {
@@ -53,7 +66,53 @@ const FieldDetailsPage = () => {
   const navigate = useNavigate();
   const { getFieldById } = useAppContext();
 
+  const [currentData, setCurrentData] = useState(null);
+  const [historicalData, setHistoricalData] = useState(null);
+  const [recommendations, setRecommendations] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+
   const field = getFieldById(id);
+
+  // Fetch data from ThingSpeak
+  const fetchData = async (showRefreshing = false) => {
+    try {
+      if (showRefreshing) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+
+      const [current, historical, recs] = await Promise.all([
+        apiService.getCurrentSensorData(),
+        apiService.getHistoricalSensorData(15),
+        apiService.getRecommendations(),
+      ]);
+
+      setCurrentData(current);
+      setHistoricalData(historical);
+      setRecommendations(recs);
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setError(err.message || "Failed to fetch data");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(() => {
+      fetchData(true);
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   if (!field) {
     return (
@@ -94,45 +153,122 @@ const FieldDetailsPage = () => {
     }
   };
 
-  // Mock chart data
-  const chartData = {
-    labels: ["Jan 15", "Jan 16", "Jan 17", "Jan 18", "Jan 19", "Jan 20"],
-    datasets: [
-      {
-        label: "Soil Moisture (%)",
-        data: [60, 62, 58, 65, 63, 65],
-        borderColor: "#2196f3",
-        backgroundColor: "rgba(33, 150, 243, 0.1)",
-        tension: 0.4,
-      },
-      {
-        label: "Temperature (°C)",
-        data: [20, 22, 21, 22, 23, 22],
-        borderColor: "#ff9800",
-        backgroundColor: "rgba(255, 152, 0, 0.1)",
-        tension: 0.4,
-      },
-    ],
+  const getTrendIcon = (trend) => {
+    switch (trend) {
+      case "increasing":
+        return <TrendingUp sx={{ fontSize: 16, color: "#4caf50" }} />;
+      case "decreasing":
+        return <TrendingDown sx={{ fontSize: 16, color: "#f44336" }} />;
+      default:
+        return <TrendingFlat sx={{ fontSize: 16, color: "#9e9e9e" }} />;
+    }
+  };
+
+  // Prepare chart data from historical data
+  const prepareChartData = () => {
+    if (!historicalData || !historicalData.data) {
+      return null;
+    }
+
+    const data = historicalData.data.slice(-10); // Last 10 readings
+
+    return {
+      labels: data.map((d) => {
+        const date = new Date(d.timestamp);
+        return date.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }),
+      datasets: [
+        {
+          label: "Nitrogen (N)",
+          data: data.map((d) => d.nitrogen),
+          borderColor: "#2196f3",
+          backgroundColor: "rgba(33, 150, 243, 0.1)",
+          tension: 0.4,
+          fill: true,
+        },
+        {
+          label: "Phosphorus (P)",
+          data: data.map((d) => d.phosphorus),
+          borderColor: "#ff9800",
+          backgroundColor: "rgba(255, 152, 0, 0.1)",
+          tension: 0.4,
+          fill: true,
+        },
+        {
+          label: "Potassium (K)",
+          data: data.map((d) => d.potassium),
+          borderColor: "#4caf50",
+          backgroundColor: "rgba(76, 175, 80, 0.1)",
+          tension: 0.4,
+          fill: true,
+        },
+      ],
+    };
+  };
+
+  const prepareMoistureChartData = () => {
+    if (!historicalData || !historicalData.data) {
+      return null;
+    }
+
+    const data = historicalData.data.slice(-10);
+
+    return {
+      labels: data.map((d) => {
+        const date = new Date(d.timestamp);
+        return date.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }),
+      datasets: [
+        {
+          label: "Soil Moisture (%)",
+          data: data.map((d) => d.moisture),
+          borderColor: "#03a9f4",
+          backgroundColor: "rgba(3, 169, 244, 0.2)",
+          tension: 0.4,
+          fill: true,
+        },
+        {
+          label: "Temperature (°C)",
+          data: data.map((d) => d.temperature),
+          borderColor: "#ff5722",
+          backgroundColor: "rgba(255, 87, 34, 0.2)",
+          tension: 0.4,
+          fill: true,
+        },
+      ],
+    };
   };
 
   const chartOptions = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: "top",
         labels: {
           boxWidth: 12,
           font: {
-            size: 11,
+            size: 10,
           },
+          padding: 10,
         },
+      },
+      tooltip: {
+        mode: "index",
+        intersect: false,
       },
     },
     scales: {
       y: {
         beginAtZero: true,
         grid: {
-          color: "rgba(0,0,0,0.1)",
+          color: "rgba(0,0,0,0.05)",
         },
         ticks: {
           font: {
@@ -142,16 +278,41 @@ const FieldDetailsPage = () => {
       },
       x: {
         grid: {
-          color: "rgba(0,0,0,0.1)",
+          color: "rgba(0,0,0,0.05)",
         },
         ticks: {
           font: {
-            size: 10,
+            size: 9,
           },
+          maxRotation: 45,
+          minRotation: 45,
         },
       },
     },
+    interaction: {
+      mode: "nearest",
+      axis: "x",
+      intersect: false,
+    },
   };
+
+  if (loading && !currentData) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "100vh",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  const nutrientChartData = prepareChartData();
+  const moistureChartData = prepareMoistureChartData();
 
   return (
     <Box className="page">
@@ -170,9 +331,20 @@ const FieldDetailsPage = () => {
           >
             <ArrowBack />
           </IconButton>
-          <Typography variant="h5" sx={{ fontWeight: 600 }}>
+          <Typography variant="h5" sx={{ fontWeight: 600, flex: 1 }}>
             {field.name}
           </Typography>
+          <IconButton
+            onClick={() => fetchData(true)}
+            disabled={refreshing}
+            sx={{ color: "white" }}
+          >
+            {refreshing ? (
+              <CircularProgress size={24} sx={{ color: "white" }} />
+            ) : (
+              <Refresh />
+            )}
+          </IconButton>
         </Box>
 
         <Box
@@ -184,208 +356,370 @@ const FieldDetailsPage = () => {
           }}
         >
           <Chip
-            icon={getStatusIcon(field.status)}
-            label={field.status.charAt(0).toUpperCase() + field.status.slice(1)}
+            icon={<CheckCircleOutline />}
+            label="Live Data"
             size="small"
             sx={{
               bgcolor: "rgba(255,255,255,0.2)",
               color: "white",
               fontWeight: 500,
+              animation: "pulse 2s infinite",
+              "@keyframes pulse": {
+                "0%, 100%": { opacity: 1 },
+                "50%": { opacity: 0.7 },
+              },
             }}
           />
-          <Typography variant="body2">
-            {field.crop} • {field.area}
-          </Typography>
+          <Typography variant="body2">{field.area}</Typography>
         </Box>
       </Box>
 
       {/* Content */}
       <Box sx={{ p: 2, pb: 10 }}>
-        {/* Health Score */}
-        <Card sx={{ mb: 3 }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-              Field Health Score
-            </Typography>
-            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-              <Box sx={{ flexGrow: 1, mr: 2 }}>
-                <LinearProgress
-                  variant="determinate"
-                  value={field.overallHealth}
-                  sx={{
-                    height: 8,
-                    borderRadius: 4,
-                    bgcolor: "#e0e0e0",
-                    "& .MuiLinearProgress-bar": {
-                      bgcolor: getStatusColor(field.status),
-                      borderRadius: 4,
-                    },
-                  }}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
+
+        {/* Current Sensor Readings */}
+        {currentData && (
+          <Card sx={{ mb: 3 }}>
+            <CardContent>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  mb: 2,
+                }}
+              >
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Real-Time Sensor Data
+                </Typography>
+                <Chip
+                  label="Live"
+                  size="small"
+                  color="success"
+                  sx={{ fontWeight: 600 }}
                 />
               </Box>
-              <Typography
-                variant="h6"
-                sx={{ fontWeight: 700, color: getStatusColor(field.status) }}
-              >
-                {field.overallHealth}%
+
+              <Grid container spacing={2}>
+                <Grid item xs={4}>
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      bgcolor: "#e3f2fd",
+                      borderRadius: 2,
+                      textAlign: "center",
+                      border: "2px solid #2196f3",
+                    }}
+                  >
+                    <Typography
+                      variant="caption"
+                      sx={{ fontWeight: 600, color: "#1976d2" }}
+                    >
+                      NITROGEN
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 700, my: 0.5 }}>
+                      {currentData.nitrogen?.toFixed(1) || "N/A"}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      kg/ha
+                    </Typography>
+                    {historicalData?.trends?.nitrogen && (
+                      <Box sx={{ mt: 0.5 }}>
+                        {getTrendIcon(historicalData.trends.nitrogen)}
+                      </Box>
+                    )}
+                  </Box>
+                </Grid>
+
+                <Grid item xs={4}>
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      bgcolor: "#fff3e0",
+                      borderRadius: 2,
+                      textAlign: "center",
+                      border: "2px solid #ff9800",
+                    }}
+                  >
+                    <Typography
+                      variant="caption"
+                      sx={{ fontWeight: 600, color: "#f57c00" }}
+                    >
+                      PHOSPHORUS
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 700, my: 0.5 }}>
+                      {currentData.phosphorus?.toFixed(1) || "N/A"}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      kg/ha
+                    </Typography>
+                    {historicalData?.trends?.phosphorus && (
+                      <Box sx={{ mt: 0.5 }}>
+                        {getTrendIcon(historicalData.trends.phosphorus)}
+                      </Box>
+                    )}
+                  </Box>
+                </Grid>
+
+                <Grid item xs={4}>
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      bgcolor: "#e8f5e9",
+                      borderRadius: 2,
+                      textAlign: "center",
+                      border: "2px solid #4caf50",
+                    }}
+                  >
+                    <Typography
+                      variant="caption"
+                      sx={{ fontWeight: 600, color: "#388e3c" }}
+                    >
+                      POTASSIUM
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 700, my: 0.5 }}>
+                      {currentData.potassium?.toFixed(1) || "N/A"}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      kg/ha
+                    </Typography>
+                    {historicalData?.trends?.potassium && (
+                      <Box sx={{ mt: 0.5 }}>
+                        {getTrendIcon(historicalData.trends.potassium)}
+                      </Box>
+                    )}
+                  </Box>
+                </Grid>
+
+                <Grid item xs={4}>
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      bgcolor: "#e1f5fe",
+                      borderRadius: 2,
+                      textAlign: "center",
+                    }}
+                  >
+                    <Opacity sx={{ fontSize: 20, color: "#03a9f4", mb: 0.5 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                      {currentData.moisture?.toFixed(1) || "N/A"}%
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Moisture
+                    </Typography>
+                  </Box>
+                </Grid>
+
+                <Grid item xs={4}>
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      bgcolor: "#fce4ec",
+                      borderRadius: 2,
+                      textAlign: "center",
+                    }}
+                  >
+                    <Thermostat
+                      sx={{ fontSize: 20, color: "#e91e63", mb: 0.5 }}
+                    />
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                      {currentData.temperature?.toFixed(1) || "N/A"}°C
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Temperature
+                    </Typography>
+                  </Box>
+                </Grid>
+
+                <Grid item xs={4}>
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      bgcolor: "#f3e5f5",
+                      borderRadius: 2,
+                      textAlign: "center",
+                    }}
+                  >
+                    <Science sx={{ fontSize: 20, color: "#9c27b0", mb: 0.5 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                      {currentData.ph?.toFixed(1) || "N/A"}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      pH Level
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+
+              {historicalData?.average && (
+                <Box
+                  sx={{ mt: 2, p: 1.5, bgcolor: "#f5f5f5", borderRadius: 1 }}
+                >
+                  <Typography
+                    variant="caption"
+                    sx={{ fontWeight: 600, display: "block", mb: 1 }}
+                  >
+                    15-Reading Averages:
+                  </Typography>
+                  <Grid container spacing={1}>
+                    <Grid item xs={4}>
+                      <Typography variant="caption">
+                        N:{" "}
+                        {historicalData.average.nitrogen?.toFixed(1) || "N/A"}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={4}>
+                      <Typography variant="caption">
+                        P:{" "}
+                        {historicalData.average.phosphorus?.toFixed(1) || "N/A"}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={4}>
+                      <Typography variant="caption">
+                        K:{" "}
+                        {historicalData.average.potassium?.toFixed(1) || "N/A"}
+                      </Typography>
+                    </Grid>
+                  </Grid>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* NPK Trends Chart */}
+        {nutrientChartData && (
+          <Card sx={{ mb: 3 }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+                Nutrient Trends (NPK)
               </Typography>
-            </Box>
-            <Typography variant="body2" color="text.secondary">
-              Based on soil conditions, weather, and crop health indicators
-            </Typography>
-          </CardContent>
-        </Card>
+              <Box sx={{ height: 220 }}>
+                <Line data={nutrientChartData} options={chartOptions} />
+              </Box>
+            </CardContent>
+          </Card>
+        )}
 
-        {/* Current Metrics */}
-        <Card sx={{ mb: 3 }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-              Current Conditions
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={6}>
-                <Box
-                  sx={{
-                    p: 2,
-                    bgcolor: "#f8f9fa",
-                    borderRadius: 2,
-                    border: "1px solid #e9ecef",
-                    textAlign: "center",
-                  }}
-                >
-                  <Opacity sx={{ fontSize: 24, color: "#2196f3", mb: 1 }} />
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {field.metrics.soilMoisture}%
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Soil Moisture
-                  </Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={6}>
-                <Box
-                  sx={{
-                    p: 2,
-                    bgcolor: "#f8f9fa",
-                    borderRadius: 2,
-                    border: "1px solid #e9ecef",
-                    textAlign: "center",
-                  }}
-                >
-                  <Thermostat sx={{ fontSize: 24, color: "#ff9800", mb: 1 }} />
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {field.metrics.temperature}°C
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Temperature
-                  </Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={6}>
-                <Box
-                  sx={{
-                    p: 2,
-                    bgcolor: "#f8f9fa",
-                    borderRadius: 2,
-                    border: "1px solid #e9ecef",
-                    textAlign: "center",
-                  }}
-                >
-                  <Water sx={{ fontSize: 24, color: "#03a9f4", mb: 1 }} />
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {field.metrics.humidity}%
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Humidity
-                  </Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={6}>
-                <Box
-                  sx={{
-                    p: 2,
-                    bgcolor: "#f8f9fa",
-                    borderRadius: 2,
-                    border: "1px solid #e9ecef",
-                    textAlign: "center",
-                  }}
-                >
-                  <Science sx={{ fontSize: 24, color: "#4caf50", mb: 1 }} />
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {field.metrics.ph}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    pH Level
-                  </Typography>
-                </Box>
-              </Grid>
-            </Grid>
-          </CardContent>
-        </Card>
+        {/* Moisture & Temperature Chart */}
+        {moistureChartData && (
+          <Card sx={{ mb: 3 }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+                Environmental Conditions
+              </Typography>
+              <Box sx={{ height: 200 }}>
+                <Line data={moistureChartData} options={chartOptions} />
+              </Box>
+            </CardContent>
+          </Card>
+        )}
 
-        {/* Trends Chart */}
-        <Card sx={{ mb: 3 }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-              7-Day Trends
-            </Typography>
-            <Box sx={{ height: 200 }}>
-              <Line data={chartData} options={chartOptions} />
-            </Box>
-          </CardContent>
-        </Card>
+        {/* Recommendations Section */}
+        {recommendations && (
+          <>
+            {/* Soil Health */}
+            <Card sx={{ mb: 3 }}>
+              <CardContent>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    mb: 2,
+                  }}
+                >
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    Soil Health Status
+                  </Typography>
+                  <Chip
+                    label={recommendations.soil_health}
+                    color={
+                      recommendations.soil_health.includes("Good")
+                        ? "success"
+                        : "warning"
+                    }
+                    sx={{ fontWeight: 600 }}
+                  />
+                </Box>
+                <Typography variant="body2" color="text.secondary">
+                  {recommendations.reasoning}
+                </Typography>
+              </CardContent>
+            </Card>
 
-        {/* Field Information */}
-        <Card sx={{ mb: 3 }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-              Field Information
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                  <Agriculture sx={{ mr: 1, color: "text.secondary" }} />
-                  <Typography variant="body2">
-                    <strong>Crop:</strong> {field.crop}
+            {/* Fertilizer Recommendation */}
+            <Card sx={{ mb: 3, bgcolor: "#e8f5e9" }}>
+              <CardContent>
+                <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                  <Agriculture
+                    sx={{ fontSize: 28, color: "#4caf50", mr: 1.5 }}
+                  />
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    Fertilizer Recommendation
                   </Typography>
                 </Box>
-              </Grid>
-              <Grid item xs={12}>
-                <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                  <CalendarToday sx={{ mr: 1, color: "text.secondary" }} />
-                  <Typography variant="body2">
-                    <strong>Planted:</strong>{" "}
-                    {new Date(field.plantedDate).toLocaleDateString()}
+                <Typography
+                  variant="body1"
+                  sx={{ fontWeight: 600, color: "#2e7d32", mb: 2 }}
+                >
+                  {recommendations.fertilizer_recommendation}
+                </Typography>
+                <Divider sx={{ my: 2 }} />
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                  Recommended Actions:
+                </Typography>
+                <List dense>
+                  {recommendations.actions.map((action, index) => (
+                    <ListItem key={index} sx={{ pl: 0 }}>
+                      <ListItemIcon sx={{ minWidth: 32 }}>
+                        <CheckCircleOutline
+                          sx={{ fontSize: 18, color: "#4caf50" }}
+                        />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={action}
+                        primaryTypographyProps={{
+                          variant: "body2",
+                          sx: { fontSize: "0.875rem" },
+                        }}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </CardContent>
+            </Card>
+
+            {/* Crop Suggestion */}
+            <Card sx={{ mb: 3, bgcolor: "#fff3e0" }}>
+              <CardContent>
+                <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                  <Agriculture
+                    sx={{ fontSize: 28, color: "#ff9800", mr: 1.5 }}
+                  />
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    Crop Suggestion
                   </Typography>
                 </Box>
-              </Grid>
-              <Grid item xs={12}>
-                <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                  <CalendarToday sx={{ mr: 1, color: "text.secondary" }} />
-                  <Typography variant="body2">
-                    <strong>Expected Harvest:</strong>{" "}
-                    {new Date(field.expectedHarvest).toLocaleDateString()}
-                  </Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={12}>
-                <Typography variant="body2">
-                  <strong>Soil Type:</strong> {field.soilType}
+                <Typography
+                  variant="body1"
+                  sx={{ fontWeight: 600, color: "#e65100", mb: 1 }}
+                >
+                  {recommendations.crop_suggestion}
                 </Typography>
-              </Grid>
-              <Grid item xs={12}>
-                <Typography variant="body2">
-                  <strong>Irrigation:</strong> {field.irrigation}
+                <Typography variant="body2" color="text.secondary">
+                  Based on current soil nutrient profile and environmental
+                  conditions. These crops will perform optimally in your field.
                 </Typography>
-              </Grid>
-              <Grid item xs={12}>
-                <Typography variant="body2">
-                  <strong>Last Fertilizer:</strong> {field.fertilizer}
-                </Typography>
-              </Grid>
-            </Grid>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </>
+        )}
 
         {/* Actions */}
         <Grid container spacing={2}>
@@ -403,7 +737,7 @@ const FieldDetailsPage = () => {
               }}
               onClick={() => navigate("/photo-upload")}
             >
-              📷 Take Photo
+              📷 Soil Analysis
             </Button>
           </Grid>
           <Grid item xs={6}>
