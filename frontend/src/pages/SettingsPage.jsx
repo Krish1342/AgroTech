@@ -89,7 +89,9 @@ const SettingsPage = () => {
           </Typography>
         </Box>
         <Typography variant="body2" sx={{ opacity: 0.9 }}>
-          Manage your app preferences and account
+          {state.language === "hi"
+            ? "अपनी ऐप प्राथमिकताएं और खाता प्रबंधित करें"
+            : "Manage your app preferences and account"}
         </Typography>
       </Box>
 
@@ -165,8 +167,8 @@ const SettingsPage = () => {
             <List disablePadding>
               <ListItem>
                 <ListItemText
-                  primary="Weather Alerts"
-                  secondary="Get notified about weather changes affecting your crops"
+                  primary={getTranslation("weatherAlerts")}
+                  secondary={getTranslation("weatherAlertsDesc")}
                 />
                 <ListItemSecondaryAction>
                   <Switch
@@ -181,8 +183,8 @@ const SettingsPage = () => {
 
               <ListItem>
                 <ListItemText
-                  primary="Disease Alerts"
-                  secondary="Receive alerts when diseases are detected"
+                  primary={getTranslation("diseaseAlerts")}
+                  secondary={getTranslation("diseaseAlertsDesc")}
                 />
                 <ListItemSecondaryAction>
                   <Switch
@@ -197,8 +199,8 @@ const SettingsPage = () => {
 
               <ListItem>
                 <ListItemText
-                  primary="Irrigation Reminders"
-                  secondary="Get reminders for watering your crops"
+                  primary={getTranslation("irrigationReminders")}
+                  secondary={getTranslation("irrigationRemindersDesc")}
                 />
                 <ListItemSecondaryAction>
                   <Switch
@@ -215,8 +217,8 @@ const SettingsPage = () => {
 
               <ListItem>
                 <ListItemText
-                  primary="Market Updates"
-                  secondary="Stay updated with crop prices and market trends"
+                  primary={getTranslation("marketUpdates")}
+                  secondary={getTranslation("marketUpdatesDesc")}
                 />
                 <ListItemSecondaryAction>
                   <Switch
@@ -238,21 +240,27 @@ const SettingsPage = () => {
             <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
               <Info sx={{ mr: 1, color: "text.secondary" }} />
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                App Information
+                {getTranslation("appInformation")}
               </Typography>
             </Box>
 
             <List disablePadding>
               <ListItem>
-                <ListItemText primary="Version" secondary="1.0.0" />
-              </ListItem>
-              <ListItem>
-                <ListItemText primary="Last Updated" secondary="January 2024" />
+                <ListItemText
+                  primary={getTranslation("version")}
+                  secondary="1.0.0"
+                />
               </ListItem>
               <ListItem>
                 <ListItemText
-                  primary="Privacy Policy"
-                  secondary="View our privacy policy"
+                  primary={getTranslation("lastUpdatedApp")}
+                  secondary="January 2024"
+                />
+              </ListItem>
+              <ListItem>
+                <ListItemText
+                  primary={getTranslation("privacyPolicy")}
+                  secondary={getTranslation("viewPrivacyPolicy")}
                 />
                 <ListItemSecondaryAction>
                   <IconButton edge="end">
@@ -262,8 +270,8 @@ const SettingsPage = () => {
               </ListItem>
               <ListItem>
                 <ListItemText
-                  primary="Terms of Service"
-                  secondary="View terms and conditions"
+                  primary={getTranslation("termsOfService")}
+                  secondary={getTranslation("viewTerms")}
                 />
                 <ListItemSecondaryAction>
                   <IconButton edge="end">
@@ -281,15 +289,15 @@ const SettingsPage = () => {
             <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
               <Help sx={{ mr: 1, color: "text.secondary" }} />
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                Help & Support
+                {getTranslation("helpSupport")}
               </Typography>
             </Box>
 
             <List disablePadding>
               <ListItem>
                 <ListItemText
-                  primary="FAQ"
-                  secondary="Frequently asked questions"
+                  primary={getTranslation("faq")}
+                  secondary={getTranslation("frequentlyAsked")}
                 />
                 <ListItemSecondaryAction>
                   <IconButton edge="end">
@@ -299,8 +307,8 @@ const SettingsPage = () => {
               </ListItem>
               <ListItem>
                 <ListItemText
-                  primary="Contact Support"
-                  secondary="Get help from our team"
+                  primary={getTranslation("contactSupport")}
+                  secondary={getTranslation("getHelp")}
                 />
                 <ListItemSecondaryAction>
                   <IconButton edge="end">
@@ -310,8 +318,8 @@ const SettingsPage = () => {
               </ListItem>
               <ListItem>
                 <ListItemText
-                  primary="Tutorial"
-                  secondary="Learn how to use the app"
+                  primary={getTranslation("tutorial")}
+                  secondary={getTranslation("learnHowToUse")}
                 />
                 <ListItemSecondaryAction>
                   <IconButton edge="end">
@@ -326,8 +334,7 @@ const SettingsPage = () => {
         {/* Demo Notice */}
         <Alert severity="info" sx={{ mb: 3 }}>
           <Typography variant="body2">
-            This is a demo version of AgroTech. All data is simulated for
-            demonstration purposes.
+            {getTranslation("demoNotice")}
           </Typography>
         </Alert>
 
@@ -348,7 +355,7 @@ const SettingsPage = () => {
             },
           }}
         >
-          Logout
+          {getTranslation("logout")}
         </Button>
       </Box>
     </Box>

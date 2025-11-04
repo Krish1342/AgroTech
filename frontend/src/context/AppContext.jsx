@@ -10,7 +10,7 @@ const initialState = {
   currentLocation: null,
   fields: mockData.fieldsData,
   diseaseResults: mockData.diseaseDetectionResults,
-  chatHistory: mockData.chatHistory,
+  chatHistory: [], // Empty chat history - starts fresh
   quickActions: mockData.quickActions,
   connectedDevices: mockData.connectedDevices,
   settings: mockData.settingsOptions,

@@ -3,3 +3,13 @@ uvicorn[standard]
 requests
 python-dotenv
 pydantic
+httpx
+numpy
+pandas
+Pillow
+python-multipart
+joblib
+typing-extensions
+langchain
+langchain-groq
+langgraph 

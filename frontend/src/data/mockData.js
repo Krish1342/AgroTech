@@ -111,46 +111,8 @@ const mockData = {
     },
   ],
 
-  chatHistory: [
-    {
-      id: 1,
-      sender: "assistant",
-      message:
-        "Hello! I'm your AI farming assistant. How can I help you today?",
-      timestamp: "2024-01-20T09:00:00Z",
-      type: "text",
-    },
-    {
-      id: 2,
-      sender: "user",
-      message: "What's the best time to plant wheat in Punjab?",
-      timestamp: "2024-01-20T09:05:00Z",
-      type: "text",
-    },
-    {
-      id: 3,
-      sender: "assistant",
-      message:
-        "In Punjab, the optimal wheat planting time is from mid-October to early November. The soil temperature should be around 20-25°C for best germination. Would you like specific recommendations for your field conditions?",
-      timestamp: "2024-01-20T09:06:00Z",
-      type: "text",
-    },
-    {
-      id: 4,
-      sender: "user",
-      message: "Yes, please check my North Field conditions",
-      timestamp: "2024-01-20T09:10:00Z",
-      type: "text",
-    },
-    {
-      id: 5,
-      sender: "assistant",
-      message:
-        "Based on your North Field data: Soil moisture is 65% (good), temperature is 22°C (optimal), and pH is 6.8 (suitable for wheat). Your field conditions are excellent for wheat cultivation. Consider applying NPK fertilizer as scheduled.",
-      timestamp: "2024-01-20T09:11:00Z",
-      type: "text",
-    },
-  ],
+  // Empty chat history - starts fresh for each user
+  chatHistory: [],
 
   quickActions: [
     {

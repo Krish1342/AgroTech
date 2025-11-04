@@ -152,9 +152,27 @@ const ChatPage = () => {
           </Alert>
         )}
 
-        {/* Quick Questions */}
-        {state.chatHistory.length <= 1 && (
+        {/* Welcome Message and Quick Questions */}
+        {state.chatHistory.length === 0 && (
           <Box sx={{ mb: 3 }}>
+            <Paper
+              sx={{
+                p: 3,
+                mb: 2,
+                bgcolor: "#e3f2fd",
+                textAlign: "center",
+                borderRadius: 2,
+              }}
+            >
+              <SmartToy sx={{ fontSize: 48, color: "#2196f3", mb: 1 }} />
+              <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
+                {getTranslation("welcome")} {getTranslation("aiFarmAssistant")}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {getTranslation("askAboutFarm")}
+              </Typography>
+            </Paper>
+
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               {getTranslation("quickQuestions")}:
             </Typography>

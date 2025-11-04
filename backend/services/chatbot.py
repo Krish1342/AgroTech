@@ -33,7 +33,7 @@ class AgriChatbot:
             # Initialize Groq LLM with minimal parameters
             self.llm = ChatGroq(
                 api_key=self.groq_api_key,
-                model="llama3-8b-8192",
+                model="llama-3.1-8b-instant",
                 temperature=0.3,
                 max_tokens=1024
             )
@@ -45,15 +45,15 @@ class AgriChatbot:
         self.chat_sessions = {}
         self.max_history = 4  # Keep only last 4 messages for context
         
+        # Initialize memory for state persistence first
+        self.memory = MemorySaver()
+        
         # Build the conversation graph
         try:
             self.graph = self._build_graph()
-            # Add memory for state persistence
-            self.memory = MemorySaver()
         except Exception as e:
             print(f"⚠️  Warning: Failed to build graph: {e}")
             self.graph = None
-            self.memory = None
     
     def _build_graph(self) -> StateGraph:
         """Build the LangGraph conversation flow"""

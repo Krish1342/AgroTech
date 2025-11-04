@@ -27,7 +27,7 @@ import { useAppContext } from "../context/AppContext";
 
 const PhotoUploadPage = () => {
   const navigate = useNavigate();
-  const { actions, state } = useAppContext();
+  const { actions, state, getTranslation } = useAppContext();
   const fileInputRef = useRef(null);
 
   const [selectedImage, setSelectedImage] = useState(null);
@@ -150,12 +150,11 @@ const PhotoUploadPage = () => {
             <ArrowBack />
           </IconButton>
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
-            Disease Detection
+            {getTranslation("diseaseDetection")}
           </Typography>
         </Box>
         <Typography variant="body2" sx={{ opacity: 0.9 }}>
-          Take a photo of your crop to detect diseases and get treatment
-          recommendations
+          {getTranslation("diseaseDetectionDesc")}
         </Typography>
       </Box>
 
@@ -191,7 +190,9 @@ const PhotoUploadPage = () => {
               {!previewUrl && (
                 <Box sx={{ textAlign: "center", color: "white" }}>
                   <CameraAlt sx={{ fontSize: 48, mb: 2 }} />
-                  <Typography variant="h6">Tap to take photo</Typography>
+                  <Typography variant="h6">
+                    {getTranslation("tapToTakePhoto")}
+                  </Typography>
                 </Box>
               )}
 
@@ -231,7 +232,9 @@ const PhotoUploadPage = () => {
                   },
                 }}
               >
-                {previewUrl ? "Retake Photo" : "Take Photo"}
+                {previewUrl
+                  ? getTranslation("retakePhoto")
+                  : getTranslation("takePhoto")}
               </Button>
 
               {previewUrl && (
@@ -248,7 +251,9 @@ const PhotoUploadPage = () => {
                     },
                   }}
                 >
-                  {isAnalyzing ? "Analyzing..." : "Analyze"}
+                  {isAnalyzing
+                    ? getTranslation("analyzing")
+                    : getTranslation("analyze")}
                 </Button>
               )}
             </Box>
