@@ -30,20 +30,11 @@ import {
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
+import LanguageSelector from "../components/LanguageSelector";
 
 const SettingsPage = () => {
   const navigate = useNavigate();
   const { state, actions, getTranslation } = useAppContext();
-
-  const handleLanguageChange = (event) => {
-    actions.setLanguage(event.target.value);
-    actions.addNotification({
-      type: "success",
-      message: `Language changed to ${
-        event.target.value === "en" ? "English" : "हिंदी"
-      }`,
-    });
-  };
 
   const handleNotificationToggle = (setting) => {
     const newSettings = {
@@ -138,19 +129,11 @@ const SettingsPage = () => {
                 {getTranslation("language")}
               </Typography>
             </Box>
-            <RadioGroup value={state.language} onChange={handleLanguageChange}>
-              <FormControlLabel
-                value="en"
-                control={<Radio />}
-                label="English"
-                sx={{ mb: 1 }}
-              />
-              <FormControlLabel
-                value="hi"
-                control={<Radio />}
-                label="हिंदी (Hindi)"
-              />
-            </RadioGroup>
+            <LanguageSelector
+              variant="outlined"
+              size="medium"
+              showIcon={false}
+            />
           </CardContent>
         </Card>
 
