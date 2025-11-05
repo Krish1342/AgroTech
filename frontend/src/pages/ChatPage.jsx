@@ -63,6 +63,11 @@ const ChatPage = () => {
         farmContext
       );
 
+      // If backend indicates failure, trigger catch flow
+      if (!response || response.success === false) {
+        throw new Error(response?.message || "Chat service returned an error");
+      }
+
       // Add AI response
       actions.addChatMessage({
         sender: "assistant",

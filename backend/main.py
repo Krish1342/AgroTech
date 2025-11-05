@@ -3,12 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from datetime import datetime
 import os
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
 
-# Load environment variables from .env file
-load_dotenv()
+# Load environment variables from nearest .env file (search upward) for robustness
+load_dotenv(find_dotenv())
 
 # Import services
 from services.chatbot import get_chatbot, health_check as chatbot_health_check
