@@ -1,26 +1,15 @@
-# Python__pycache__/
-
+# Python
 __pycache__/
-
-*.py[cod]# Environment variables
-
-*$py.class.env
-
-*.so.env.local
-
-.Python.env.development.local
-
-build/.env.test.local
-
-develop-eggs/.env.production.local
-
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
 dist/
-
-downloads/# API Keys and sensitive data
-
-eggs/*.key
-
-.eggs/secrets/
+downloads/
+eggs/
+.eggs/
 lib/
 lib64/
 parts/
