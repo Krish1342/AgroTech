@@ -2,14 +2,15 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# install build deps and pip packages
+# Install build deps and pip packages
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# copy app code
+# Copy app code
 COPY . .
 
+# Expose port
 EXPOSE 8000
 
-# Run uvicorn (override in docker run if needed)
-CMD ["uvicorn", "demo_api:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run uvicorn for production
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]

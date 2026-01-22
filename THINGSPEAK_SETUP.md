@@ -41,16 +41,17 @@ This guide will help you set up ThingSpeak integration for real-time sensor moni
    cp .env.example .env
    ```
 3. Edit `.env` and add your credentials:
+
    ```env
    # ThingSpeak Configuration (5 fields only)
    THINGSPEAK_CHANNEL_ID=your_channel_id
    THINGSPEAK_READ_API_KEY=your_read_api_key
    THINGSPEAK_WRITE_API_KEY=your_write_api_key
    THINGSPEAK_MODEL_FIELDS=1,2,3,4,5
-   
+
    # OpenWeatherMap (for temperature data)
    OPENWEATHER_API_KEY=your_openweather_api_key
-   
+
    # Default location for weather data
    DEFAULT_LATITUDE=28.6139
    DEFAULT_LONGITUDE=77.2090
@@ -66,6 +67,7 @@ python populate_demo_data.py
 ```
 
 Choose one of three options:
+
 1. **Custom populate**: Choose how many entries per soil profile (recommended: 2-3)
 2. **Quick populate**: Sends 1 entry from each of 8 different soil profiles
 3. **Continuous mode**: Keeps sending random data every 15 seconds
@@ -75,12 +77,14 @@ Choose one of three options:
 ### Step 5: Test the Integration
 
 1. Start the backend server:
+
    ```bash
    cd backend
    python main.py
    ```
 
 2. Test the API endpoints:
+
    ```bash
    # Get current sensor data (includes weather temperature)
    curl http://localhost:8000/api/thingspeak/current
@@ -98,6 +102,7 @@ Choose one of three options:
 ### Step 6: Start Frontend
 
 1. Navigate to frontend folder:
+
    ```bash
    cd frontend
    npm install
@@ -110,6 +115,7 @@ Choose one of three options:
 ## 📊 Sensor Data Structure
 
 ### ThingSpeak Fields (5 only)
+
 - **Field 1**: Nitrogen (N) - kg/ha
 - **Field 2**: Phosphorus (P) - kg/ha
 - **Field 3**: Potassium (K) - kg/ha
@@ -117,6 +123,7 @@ Choose one of three options:
 - **Field 5**: pH Level - 0-14 scale
 
 ### Weather API (Temperature)
+
 - Temperature is fetched from OpenWeatherMap API
 - Uses location configured in `DEFAULT_LATITUDE` and `DEFAULT_LONGITUDE`
 - No sensor needed for temperature measurement
@@ -132,6 +139,7 @@ python populate_demo_data.py
 ```
 
 This includes 8 different soil profiles:
+
 - 🌟 Nutrient-Rich Soil
 - 🔵 Nitrogen-Deficient Soil
 - 🟠 Phosphorus-Deficient Soil
@@ -173,7 +181,7 @@ const char* writeAPIKey = "YOUR_WRITE_API_KEY";
 void setup() {
   Serial.begin(115200);
   WiFi.begin(ssid, password);
-  
+
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
@@ -184,7 +192,7 @@ void setup() {
 void loop() {
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
-    
+
     // Read sensor values (replace with actual sensor readings)
     float nitrogen = 45.0;
     float phosphorus = 25.0;
@@ -192,24 +200,24 @@ void loop() {
     float moisture = 65.0;
     float ph = 6.8;
     // Note: Temperature comes from Weather API, not sensor
-    
+
     String url = "https://api.thingspeak.com/update?api_key=" + String(writeAPIKey) +
                  "&field1=" + String(nitrogen) +
                  "&field2=" + String(phosphorus) +
                  "&field3=" + String(potassium) +
                  "&field4=" + String(moisture) +
                  "&field5=" + String(ph);
-    
+
     http.begin(url);
     int httpCode = http.GET();
-    
+
     if (httpCode > 0) {
       Serial.println("Data sent successfully");
     }
-    
+
     http.end();
   }
-  
+
   delay(15000); // Wait 15 seconds (ThingSpeak rate limit)
 }
 ```
@@ -217,6 +225,7 @@ void loop() {
 ## 🎯 Features
 
 ### Real-Time Monitoring
+
 - Live sensor data updates every 30 seconds
 - Visual charts showing NPK nutrient trends
 - Environmental conditions (moisture, pH)
@@ -224,6 +233,7 @@ void loop() {
 - Trend indicators (increasing/decreasing/stable)
 
 ### Smart Recommendations
+
 - **Fertilizer Recommendations**: Based on current NPK levels
 - **Crop Suggestions**: Optimized for your soil conditions
 - **Actionable Advice**: Step-by-step fertilization guidelines
@@ -231,6 +241,7 @@ void loop() {
 - **Weather-aware**: Temperature considerations in recommendations
 
 ### Dashboard Features
+
 - Single device view (simplified from multi-field)
 - Device connection status indicator
 - Real-time data refresh button
@@ -239,13 +250,15 @@ void loop() {
 ## 📱 UI Components
 
 ### Dashboard Page
+
 - Shows connected device status
-- Displays live sensor readings (N, P, K, Moisture, pH, Temperature*)
+- Displays live sensor readings (N, P, K, Moisture, pH, Temperature\*)
 - Single field card with real-time data
 - Quick action buttons
-- *Temperature sourced from weather API
+- \*Temperature sourced from weather API
 
 ### Field Details Page
+
 - Real-time sensor data with color-coded indicators
 - Historical trends charts (last 10 readings)
 - 15-reading averages for each parameter
@@ -256,6 +269,7 @@ void loop() {
 ## 🔧 Troubleshooting
 
 ### No Data Showing
+
 1. Check ThingSpeak API keys in `.env` file
 2. Verify channel has data (check ThingSpeak dashboard)
 3. Check OpenWeatherMap API key is valid
@@ -263,18 +277,21 @@ void loop() {
 5. Test API endpoint: `curl http://localhost:8000/api/thingspeak/current`
 
 ### "Device Disconnected" Status
+
 - Means no recent data in ThingSpeak channel
 - Run `python populate_demo_data.py` to add demo data
 - Or use `python send_test_data.py` for continuous data
 - Check that field mappings are correct in `.env` (only 5 fields)
 
 ### Temperature Not Showing
+
 - Verify `OPENWEATHER_API_KEY` is set in `.env`
 - Check `DEFAULT_LATITUDE` and `DEFAULT_LONGITUDE` are correct
 - Backend will use fallback temperature (25°C) if weather API fails
 - Check backend logs for weather API errors
 
 ### API Rate Limits
+
 - ThingSpeak free tier: 1 update every 15 seconds
 - Frontend auto-refreshes every 30 seconds (safe)
 - Demo data populator respects 15-second limit
@@ -283,15 +300,19 @@ void loop() {
 ## 📚 API Endpoints
 
 ### `GET /api/thingspeak/current`
+
 Returns the latest sensor reading with temperature from weather API
 
 ### `GET /api/thingspeak/historical?results=15`
+
 Returns last N readings with averages and trends
 
 ### `GET /api/thingspeak/recommendations`
+
 Returns smart fertilizer and crop recommendations (uses weather temperature)
 
 ### `GET /api/thingspeak/device-status`
+
 Returns device connection status
 
 ## 🌟 Recommendation Logic
@@ -299,6 +320,7 @@ Returns device connection status
 The system provides intelligent recommendations based on:
 
 ### Fertilizer Logic
+
 - **Nitrogen < 30**: High-N fertilizer (Urea)
 - **Nitrogen > 80**: Skip nitrogen fertilizers
 - **Phosphorus < 15**: High-P fertilizer (DAP)
@@ -306,6 +328,7 @@ The system provides intelligent recommendations based on:
 - **All optimal**: Balanced NPK maintenance
 
 ### Crop Suggestions
+
 - **High N, Low P/K**: Leafy vegetables (Spinach, Lettuce)
 - **High P & K**: Fruiting crops (Tomatoes, Peppers)
 - **Low N, High P**: Root vegetables (Potatoes, Carrots)
@@ -313,6 +336,7 @@ The system provides intelligent recommendations based on:
 - **Very high nutrients**: Heavy feeders (Pumpkin, Squash)
 
 ### Soil Health
+
 - **pH 6.0-7.5**: Optimal
 - **pH < 5.5**: Add lime to reduce acidity
 - **pH > 8.0**: Add sulfur to reduce alkalinity
@@ -323,27 +347,33 @@ The system provides intelligent recommendations based on:
 ## 🎨 Customization
 
 ### Changing Default Location
+
 Edit `backend/.env`:
+
 ```env
 DEFAULT_LATITUDE=your_latitude
 DEFAULT_LONGITUDE=your_longitude
 ```
 
 ### Adjusting Refresh Rate
+
 Edit `frontend/src/pages/FieldDetailsPage.jsx`:
+
 ```javascript
 // Change from 30000 (30s) to desired milliseconds
 const interval = setInterval(() => {
   fetchData(true);
-}, 60000);  // 60 seconds
+}, 60000); // 60 seconds
 ```
 
 ### Customizing Recommendations
+
 Edit `backend/api/routes/thingspeak.py` in the `get_smart_recommendations` function to adjust thresholds and logic.
 
 ## 📞 Support
 
 For issues or questions:
+
 1. Check ThingSpeak documentation: https://www.mathworks.com/help/thingspeak/
 2. Check OpenWeatherMap docs: https://openweathermap.org/api
 3. Review backend logs: `python main.py`

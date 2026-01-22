@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: agrotech-backend
+    runtime: python
+    region: oregon # Choose your preferred region
+    plan: free # Change to 'starter' or higher for production
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
+      - key: APP_NAME
+        value: Agrotech API
+      - key: APP_VERSION
+        value: 1.0.0
+      - key: GROQ_API_KEY
+        sync: false # Set this in Render dashboard
+      - key: OPENWEATHER_API_KEY
+        sync: false # Set this in Render dashboard
+      - key: THINGSPEAK_API_KEY
+        sync: false # Set this in Render dashboard
+      - key: THINGSPEAK_CHANNEL_ID
+        sync: false # Set this in Render dashboard
+    healthCheckPath: /health
+    autoDeploy: true # Auto-deploy on git push
