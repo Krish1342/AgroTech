@@ -78,11 +78,7 @@ allowed_origins = [origin.strip() for origin in allowed_origins]
 
 app.add_middleware(
     CORSMiddleware,
-<<<<<<< HEAD
     allow_origins=allowed_origins,
-=======
-    allow_origins=["*"],
->>>>>>> 4ec8a2105929b810bea3fd8923d082bb278c7f5a
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
