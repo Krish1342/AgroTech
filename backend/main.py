@@ -3,12 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from datetime import datetime
 import os
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
 
-# Load environment variables from .env file
-load_dotenv()
+# Load environment variables from nearest .env file (search upward) for robustness
+load_dotenv(find_dotenv())
 
 # Import services
 from services.chatbot import get_chatbot, health_check as chatbot_health_check
@@ -78,7 +78,11 @@ allowed_origins = [origin.strip() for origin in allowed_origins]
 
 app.add_middleware(
     CORSMiddleware,
+<<<<<<< HEAD
     allow_origins=allowed_origins,
+=======
+    allow_origins=["*"],
+>>>>>>> 4ec8a2105929b810bea3fd8923d082bb278c7f5a
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],

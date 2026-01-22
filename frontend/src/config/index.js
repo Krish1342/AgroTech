@@ -33,9 +33,9 @@ const config = {
 
   // Default Location
   location: {
-    latitude: parseFloat(import.meta.env.VITE_DEFAULT_LATITUDE) || 28.6139,
-    longitude: parseFloat(import.meta.env.VITE_DEFAULT_LONGITUDE) || 77.209,
-    defaultLocation: import.meta.env.VITE_DEFAULT_LOCATION || "Delhi, India",
+    latitude: parseFloat(import.meta.env.VITE_DEFAULT_LATITUDE) || 18.5204,
+    longitude: parseFloat(import.meta.env.VITE_DEFAULT_LONGITUDE) || 73.8567,
+    defaultLocation: import.meta.env.VITE_DEFAULT_LOCATION || "Pune, India",
   },
 
   // UI Configuration

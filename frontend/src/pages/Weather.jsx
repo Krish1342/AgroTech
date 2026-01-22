@@ -14,7 +14,8 @@ import {
   Loader,
   RefreshCw,
 } from "lucide-react";
-import { weatherService } from "../services/api";
+import api from "../services/api";
+import config from "../config";
 
 const Weather = () => {
   const [currentWeather, setCurrentWeather] = useState(null);
@@ -25,8 +26,8 @@ const Weather = () => {
   const [location, setLocation] = useState("");
 
   useEffect(() => {
-    // Load default weather for demo
-    loadWeatherData("New York");
+    // Load default weather
+    loadWeatherData(config.location.defaultLocation || "Delhi, India");
   }, []);
 
   const loadWeatherData = async (locationQuery) => {
@@ -34,21 +35,74 @@ const Weather = () => {
     setError("");
 
     try {
-      // Load current weather
-      const currentResponse = await weatherService.getCurrentWeather(
-        locationQuery
-      );
-      setCurrentWeather(currentResponse);
+      // Load current weather by city
+      const currentResponse = await api.getWeatherByCity(locationQuery);
 
-      // Load forecast
-      const forecastResponse = await weatherService.getForecast(locationQuery);
-      setForecast(forecastResponse.forecast || []);
+      const mappedCurrent = {
+        locationName: `${currentResponse.location?.name || "Unknown"}${
+          currentResponse.location?.country
+            ? ", " + currentResponse.location.country
+            : ""
+        }`,
+        temperature: Math.round(currentResponse.current?.temperature ?? 0),
+        feels_like: Math.round(currentResponse.current?.feels_like ?? 0),
+        humidity: currentResponse.current?.humidity ?? null,
+        wind_speed: currentResponse.current?.wind_speed ?? null, // km/h
+        visibility: currentResponse.current?.visibility ?? null, // km
+        condition: currentResponse.current?.condition ?? "",
+        description: currentResponse.current?.description ?? "",
+        icon: currentResponse.current?.icon ?? "",
+        sunrise: currentResponse.current?.sunrise || null,
+        sunset: currentResponse.current?.sunset || null,
+        timestamp: currentResponse.timestamp,
+        coordinates: currentResponse.location?.coordinates,
+        agricultural_insights: currentResponse.agricultural_insights || null,
+        data_source: currentResponse.data_source,
+      };
 
-      // Load agricultural alerts
-      const alertsResponse = await weatherService.getAgriculturalAlerts(
-        locationQuery
-      );
-      setAlerts(alertsResponse.alerts || []);
+      setCurrentWeather(mappedCurrent);
+
+      // Load forecast using coordinates
+      if (mappedCurrent.coordinates?.lat && mappedCurrent.coordinates?.lng) {
+        const forecastResponse = await api.getWeatherForecast(
+          mappedCurrent.coordinates.lat,
+          mappedCurrent.coordinates.lng,
+          5
+        );
+        setForecast(forecastResponse.forecast || []);
+      } else {
+        setForecast([]);
+      }
+
+      // Build alerts from agricultural insights
+      const insights = mappedCurrent.agricultural_insights || {};
+      const builtAlerts = [];
+      (insights.alerts || []).forEach((msg) => {
+        const lower = (msg || "").toLowerCase();
+        let severity = "medium";
+        if (
+          lower.includes("frost") ||
+          lower.includes("heavy") ||
+          lower.includes("heat")
+        ) {
+          severity = "high";
+        }
+        builtAlerts.push({
+          title: "Weather Alert",
+          description: msg,
+          severity,
+          recommendation: null,
+        });
+      });
+      (insights.recommendations || []).forEach((rec) => {
+        builtAlerts.push({
+          title: "Recommendation",
+          description: rec,
+          severity: "low",
+          recommendation: rec,
+        });
+      });
+      setAlerts(builtAlerts);
     } catch (err) {
       setError("Failed to load weather data. Please try again.");
     } finally {
@@ -70,6 +124,7 @@ const Weather = () => {
       case "clear":
         return <Sun className={`${iconClass} text-yellow-500`} />;
       case "cloudy":
+      case "clouds":
       case "overcast":
         return <Cloud className={`${iconClass} text-gray-500`} />;
       case "rainy":
@@ -148,7 +203,11 @@ const Weather = () => {
             <button
               type="button"
               onClick={() =>
-                loadWeatherData(currentWeather?.location || "New York")
+                loadWeatherData(
+                  currentWeather?.locationName ||
+                    config.location.defaultLocation ||
+                    "Delhi, India"
+                )
               }
               disabled={loading}
               className="btn-secondary flex items-center space-x-2"
@@ -183,7 +242,7 @@ const Weather = () => {
                     </h2>
                     <div className="flex items-center space-x-2 text-neutral-600 mt-1">
                       <MapPin className="h-4 w-4" />
-                      <span>{currentWeather.location}</span>
+                      <span>{currentWeather.locationName}</span>
                     </div>
                   </div>
                   <div className="text-right">
@@ -241,12 +300,12 @@ const Weather = () => {
                       </span>
                     </div>
                     <div className="text-lg font-semibold text-neutral-900">
-                      {currentWeather.visibility || "10"} km
+                      {currentWeather.visibility ?? "-"} km
                     </div>
                   </div>
                 </div>
 
-                {currentWeather.agricultural_conditions && (
+                {currentWeather.agricultural_insights && (
                   <div className="mt-6 p-4 bg-green-50 rounded-lg">
                     <h3 className="font-medium text-green-900 mb-2">
                       Agricultural Conditions
@@ -254,14 +313,18 @@ const Weather = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <span className="text-sm text-green-700">
-                          Crop Growth:
+                          Field Work:
                         </span>
                         <div
                           className={`mt-1 px-2 py-1 rounded text-xs font-medium ${getConditionColor(
-                            currentWeather.agricultural_conditions.crop_growth
+                            currentWeather.agricultural_insights
+                              .field_work_suitability
                           )}`}
                         >
-                          {currentWeather.agricultural_conditions.crop_growth}
+                          {
+                            currentWeather.agricultural_insights
+                              .field_work_suitability
+                          }
                         </div>
                       </div>
                       <div>
@@ -270,13 +333,13 @@ const Weather = () => {
                         </span>
                         <div
                           className={`mt-1 px-2 py-1 rounded text-xs font-medium ${getConditionColor(
-                            currentWeather.agricultural_conditions
-                              .irrigation_need
+                            currentWeather.agricultural_insights
+                              .irrigation_recommendation
                           )}`}
                         >
                           {
-                            currentWeather.agricultural_conditions
-                              .irrigation_need
+                            currentWeather.agricultural_insights
+                              .irrigation_recommendation
                           }
                         </div>
                       </div>
@@ -286,10 +349,10 @@ const Weather = () => {
                         </span>
                         <div
                           className={`mt-1 px-2 py-1 rounded text-xs font-medium ${getConditionColor(
-                            currentWeather.agricultural_conditions.disease_risk
+                            currentWeather.agricultural_insights.disease_risk
                           )}`}
                         >
-                          {currentWeather.agricultural_conditions.disease_risk}
+                          {currentWeather.agricultural_insights.disease_risk}
                         </div>
                       </div>
                     </div>
@@ -301,7 +364,7 @@ const Weather = () => {
               {forecast.length > 0 && (
                 <div className="card p-6">
                   <h3 className="text-lg font-semibold text-neutral-900 mb-4">
-                    7-Day Forecast
+                    Forecast
                   </h3>
                   <div className="space-y-3">
                     {forecast.map((day, index) => (
@@ -324,17 +387,18 @@ const Weather = () => {
                         </div>
                         <div className="flex items-center space-x-4 text-sm">
                           <span className="text-neutral-900 font-medium">
-                            {day.high_temp}°
+                            {Math.round(day.temperature?.max ?? 0)}°
                           </span>
                           <span className="text-neutral-500">
-                            {day.low_temp}°
+                            {Math.round(day.temperature?.min ?? 0)}°
                           </span>
-                          {day.precipitation && (
-                            <div className="flex items-center space-x-1 text-blue-600">
-                              <Droplets className="h-3 w-3" />
-                              <span>{day.precipitation}%</span>
-                            </div>
-                          )}
+                          {typeof day.precipitation === "number" &&
+                            day.precipitation > 0 && (
+                              <div className="flex items-center space-x-1 text-blue-600">
+                                <Droplets className="h-3 w-3" />
+                                <span>{Math.round(day.precipitation)} mm</span>
+                              </div>
+                            )}
                         </div>
                       </div>
                     ))}
@@ -392,17 +456,26 @@ const Weather = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-neutral-600">Last Updated:</span>
                     <span className="text-neutral-900">
-                      {new Date().toLocaleTimeString()}
+                      {currentWeather?.timestamp
+                        ? new Date(currentWeather.timestamp).toLocaleString()
+                        : "-"}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-neutral-600">Data Source:</span>
-                    <span className="text-neutral-900">Weather API</span>
+                    <span className="text-neutral-900">
+                      {currentWeather?.data_source || "Weather API"}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-neutral-600">Next Update:</span>
                     <span className="text-neutral-900">
-                      {new Date(Date.now() + 30 * 60000).toLocaleTimeString()}
+                      {currentWeather?.timestamp
+                        ? new Date(
+                            new Date(currentWeather.timestamp).getTime() +
+                              30 * 60000
+                          ).toLocaleString()
+                        : "-"}
                     </span>
                   </div>
                 </div>

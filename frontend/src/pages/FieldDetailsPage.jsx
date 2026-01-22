@@ -64,7 +64,7 @@ ChartJS.register(
 const FieldDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getFieldById } = useAppContext();
+  const { getFieldById, getTranslation } = useAppContext();
 
   const [currentData, setCurrentData] = useState(null);
   const [historicalData, setHistoricalData] = useState(null);
@@ -117,9 +117,11 @@ const FieldDetailsPage = () => {
   if (!field) {
     return (
       <Box sx={{ p: 3, textAlign: "center" }}>
-        <Typography variant="h6">Field not found</Typography>
+        <Typography variant="h6">
+          {getTranslation("fieldDetails")} not found
+        </Typography>
         <Button onClick={() => navigate("/dashboard")} sx={{ mt: 2 }}>
-          Back to Dashboard
+          {getTranslation("backToDashboard")}
         </Button>
       </Box>
     );

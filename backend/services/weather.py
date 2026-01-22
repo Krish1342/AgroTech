@@ -3,7 +3,7 @@ Weather service for agricultural applications using OpenWeatherMap API
 """
 import os
 from typing import Dict, Any, List, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import httpx
 
 from dotenv import load_dotenv
@@ -121,6 +121,8 @@ class WeatherService:
         weather = data.get("weather", [{}])[0]
         main = data.get("main", {})
         wind = data.get("wind", {})
+        sys = data.get("sys", {})
+        tz_offset = data.get("timezone", 0)  # seconds offset from UTC
         
         # Calculate agricultural insights
         insights = self._get_agricultural_insights(
@@ -131,6 +133,22 @@ class WeatherService:
             pressure=main.get("pressure", 0)
         )
         
+        # Convert wind speed from m/s to km/h for friendlier display
+        wind_speed_kmh = None
+        if isinstance(wind.get("speed"), (int, float)):
+            wind_speed_kmh = round(wind.get("speed") * 3.6, 1)
+
+        # Build sunrise/sunset times as ISO 8601 in UTC with Z suffix
+        sunrise_iso = None
+        sunset_iso = None
+        if isinstance(sys.get("sunrise"), (int, float)):
+            sunrise_iso = datetime.utcfromtimestamp(sys["sunrise"]).replace(tzinfo=timezone.utc).isoformat()
+        if isinstance(sys.get("sunset"), (int, float)):
+            sunset_iso = datetime.utcfromtimestamp(sys["sunset"]).replace(tzinfo=timezone.utc).isoformat()
+
+        # Last updated timestamp in UTC
+        now_utc_iso = datetime.now(timezone.utc).isoformat()
+
         return {
             "location": {
                 "name": data.get("name", "Unknown"),
@@ -145,27 +163,33 @@ class WeatherService:
                 "feels_like": main.get("feels_like"),
                 "humidity": main.get("humidity"),
                 "pressure": main.get("pressure"),
-                "wind_speed": wind.get("speed"),
+                "wind_speed": wind_speed_kmh,  # km/h
                 "wind_direction": wind.get("deg"),
                 "visibility": data.get("visibility", 0) / 1000,  # Convert to km
                 "uv_index": None,  # Not available in current weather API
                 "condition": weather.get("main"),
                 "description": weather.get("description"),
-                "icon": weather.get("icon")
+                "icon": weather.get("icon"),
+                "sunrise": sunrise_iso,
+                "sunset": sunset_iso,
+                "source_timestamp": datetime.utcfromtimestamp(data.get("dt", int(datetime.now().timestamp()))).replace(tzinfo=timezone.utc).isoformat(),
+                "timezone_offset": tz_offset
             },
             "agricultural_insights": insights,
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": now_utc_iso,
             "data_source": "OpenWeatherMap"
         }
     
     def _format_forecast(self, data: Dict[str, Any], days: int) -> Dict[str, Any]:
         """Format forecast data for agricultural use"""
         forecasts = []
+        tz_offset = data.get("city", {}).get("timezone", 0)  # seconds offset from UTC
         
         # Group forecasts by day
         daily_forecasts = {}
         for item in data.get("list", []):
-            date = datetime.fromtimestamp(item["dt"]).date()
+            # Apply city timezone offset then convert to local (date only)
+            date = datetime.utcfromtimestamp(item["dt"] + tz_offset).date()
             if date not in daily_forecasts:
                 daily_forecasts[date] = []
             daily_forecasts[date].append(item)
@@ -184,6 +208,10 @@ class WeatherService:
             precipitation = sum(item.get("rain", {}).get("3h", 0) + 
                              item.get("snow", {}).get("3h", 0) for item in day_forecasts)
             
+            # Average wind speed in km/h (values are m/s in API)
+            avg_wind_ms = sum(item["wind"]["speed"] for item in day_forecasts) / len(day_forecasts)
+            avg_wind_kmh = round(avg_wind_ms * 3.6, 1)
+
             daily_forecast = {
                 "date": date.isoformat(),
                 "temperature": {
@@ -199,7 +227,7 @@ class WeatherService:
                 "condition": main_condition,
                 "description": day_forecasts[0]["weather"][0]["description"],
                 "precipitation": precipitation,
-                "wind_speed": sum(item["wind"]["speed"] for item in day_forecasts) / len(day_forecasts)
+                "wind_speed": avg_wind_kmh  # km/h
             }
             
             # Add agricultural insights for the day
@@ -223,7 +251,7 @@ class WeatherService:
                 }
             },
             "forecast": forecasts,
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "data_source": "OpenWeatherMap"
         }
     

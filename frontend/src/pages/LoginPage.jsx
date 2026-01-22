@@ -24,10 +24,11 @@ import {
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
+import LanguageSelector from "../components/LanguageSelector";
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { actions, getTranslation, state } = useAppContext();
+  const { actions, getTranslation } = useAppContext();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -43,10 +44,6 @@ const LoginPage = () => {
       ...prev,
       [name]: value,
     }));
-  };
-
-  const handleLanguageChange = (e) => {
-    actions.setLanguage(e.target.value);
   };
 
   const handleDemoLogin = () => {
@@ -133,32 +130,7 @@ const LoginPage = () => {
 
         {/* Language Selection */}
         <Box sx={{ mb: 3 }}>
-          <FormLabel
-            component="legend"
-            sx={{ display: "flex", alignItems: "center", mb: 1 }}
-          >
-            <LanguageIcon sx={{ mr: 1, fontSize: 20 }} />
-            {getTranslation("language")}
-          </FormLabel>
-          <RadioGroup
-            row
-            value={state.language}
-            onChange={handleLanguageChange}
-            sx={{ justifyContent: "center" }}
-          >
-            <FormControlLabel
-              value="en"
-              control={<Radio size="small" />}
-              label="English"
-              sx={{ "& .MuiFormControlLabel-label": { fontSize: "0.9rem" } }}
-            />
-            <FormControlLabel
-              value="hi"
-              control={<Radio size="small" />}
-              label="हिंदी"
-              sx={{ "& .MuiFormControlLabel-label": { fontSize: "0.9rem" } }}
-            />
-          </RadioGroup>
+          <LanguageSelector variant="outlined" size="small" showIcon={false} />
         </Box>
 
         <Divider sx={{ mb: 3 }} />

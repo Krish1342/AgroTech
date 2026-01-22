@@ -1,6 +1,24 @@
+<<<<<<< HEAD
 fastapi>=0.104.0
 uvicorn[standard]>=0.24.0
 requests>=2.31.0
 python-dotenv>=1.0.0
 pydantic>=2.0.0
 gunicorn>=21.2.0
+=======
+fastapi
+uvicorn[standard]
+requests
+python-dotenv
+pydantic
+httpx
+numpy
+pandas
+Pillow
+python-multipart
+joblib
+typing-extensions
+langchain
+langchain-groq
+langgraph 
+>>>>>>> 4ec8a2105929b810bea3fd8923d082bb278c7f5a
